@@ -1,0 +1,194 @@
+{
+  "name": "w3c-validator-plus",
+  "displayName": "Web Standards Validator for HTML & JSP",
+  "description": "Validate HTML5, CSS, JavaScript and JSP locally. HTML and CSS checks are powered by the Nu Html Checker (the engine behind validator.w3.org/nu).",
+  "version": "0.1.0",
+  "publisher": "your-publisher-id",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-github-user/w3c-validator-plus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-github-user/w3c-validator-plus/issues"
+  },
+  "homepage": "https://github.com/your-github-user/w3c-validator-plus#readme",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "keywords": [
+    "html",
+    "html5",
+    "validator",
+    "nu html checker",
+    "vnu",
+    "jsp",
+    "css",
+    "accessibility",
+    "lint"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:html",
+    "onLanguage:jsp"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In untrusted workspaces only the built-in engines run. Workspace values for the Java path and validator server URL are ignored, and custom rule code is never loaded.",
+      "restrictedConfigurations": [
+        "webValidator.java.home",
+        "webValidator.vnu.serverUrl"
+      ]
+    },
+    "virtualWorkspaces": {
+      "supported": true,
+      "description": "Validation runs on the editor text, so virtual files are supported."
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "webValidator.validateFile",
+        "title": "Validate Current File",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.restartEngines",
+        "title": "Restart Validation Engines",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.showOutput",
+        "title": "Show Output",
+        "category": "Web Validator"
+      }
+    ],
+    "configuration": {
+      "title": "Web Standards Validator",
+      "properties": {
+        "webValidator.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable validation."
+        },
+        "webValidator.run": {
+          "type": "string",
+          "enum": [
+            "onSave",
+            "onType",
+            "manual"
+          ],
+          "enumDescriptions": [
+            "Validate when a file is opened or saved.",
+            "Validate while typing (debounced). The HTML engine still only runs on save unless `webValidator.vnu.validateOnType` is enabled.",
+            "Validate only when a command is run."
+          ],
+          "default": "onSave",
+          "description": "When to validate documents."
+        },
+        "webValidator.onTypeDelayMs": {
+          "type": "number",
+          "default": 800,
+          "minimum": 100,
+          "description": "Debounce delay in milliseconds when `webValidator.run` is `onType`."
+        },
+        "webValidator.languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "html",
+            "jsp"
+          ],
+          "description": "Language identifiers to validate."
+        },
+        "webValidator.maxFileSizeKb": {
+          "type": "number",
+          "default": 1024,
+          "minimum": 1,
+          "description": "Files larger than this (in KB) are not validated."
+        },
+        "webValidator.java.home": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "markdownDescription": "Path to a Java 11+ installation (JDK/JRE home folder or the `java` executable). When empty, `JAVA_HOME`, `PATH` and the JRE bundled with the Red Hat Java extension are tried in that order."
+        },
+        "webValidator.vnu.mode": {
+          "type": "string",
+          "enum": [
+            "local",
+            "server"
+          ],
+          "enumDescriptions": [
+            "Run the bundled Nu Html Checker locally (requires Java). Nothing leaves your machine.",
+            "Send documents to the Nu Html Checker HTTP server at `webValidator.vnu.serverUrl`."
+          ],
+          "default": "local",
+          "description": "How to run the Nu Html Checker."
+        },
+        "webValidator.vnu.serverUrl": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "markdownDescription": "URL of a self-hosted Nu Html Checker server, e.g. `http://localhost:8888/`. Used only when `webValidator.vnu.mode` is `server`. Document contents are sent to this URL."
+        },
+        "webValidator.vnu.validateOnType": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Also run the Nu Html Checker while typing when `webValidator.run` is `onType`."
+        },
+        "webValidator.vnu.timeoutMs": {
+          "type": "number",
+          "default": 20000,
+          "minimum": 1000,
+          "description": "Timeout for a single Nu Html Checker request, in milliseconds."
+        },
+        "webValidator.trace": {
+          "type": "string",
+          "enum": [
+            "off",
+            "info",
+            "verbose"
+          ],
+          "default": "info",
+          "description": "Logging level for the Web Validator output channel."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "build:prod": "node esbuild.mjs --production",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run",
+    "test:integration": "npm run build && tsc -p test/integration && node out/test/integration/runTest.js",
+    "vscode:prepublish": "npm run build:prod",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "vnu-jar": "^26.11.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.20.5",
+    "@types/vscode": "^1.90.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.1.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.14.0",
+    "mocha": "^12.0.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
+  }
+}
