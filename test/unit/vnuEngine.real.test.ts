@@ -1,7 +1,6 @@
 /**
  * Runs the real Nu Html Checker. Skipped when no Java 17+ runtime is found.
  */
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -9,29 +8,11 @@ import { isAbortError } from "../../src/engines/Engine";
 import { VnuEngine } from "../../src/engines/vnuEngine";
 import { VnuConnectionError } from "../../src/engines/vnu/vnuHttp";
 import { runVnuCli } from "../../src/engines/vnu/vnuProcess";
-import {
-  candidateJavaExecutables,
-  MIN_JAVA_MAJOR,
-  nodeJavaHost,
-  parseJavaVersion,
-  type JavaLookupResult,
-} from "../../src/java/javaLocator";
 import { nullLogger } from "../../src/util/logger";
+import { findJavaSync, vnuJarPath as jarPath } from "./helpers/java";
 
-const jarPath = String(require("vnu-jar"));
 const fixtures = join(__dirname, "..", "fixtures", "html");
 const read = (name: string) => readFileSync(join(fixtures, name), "utf8");
-
-/** Synchronous Java lookup so the suite can be skipped at collection time. */
-function findJavaSync(): JavaLookupResult {
-  for (const c of candidateJavaExecutables(nodeJavaHost, {})) {
-    if (!nodeJavaHost.isFile(c.executable)) continue;
-    const r = spawnSync(c.executable, ["-version"], { encoding: "utf8" });
-    const v = parseJavaVersion(`${r.stderr ?? ""}\n${r.stdout ?? ""}`);
-    if (v && v.major >= MIN_JAVA_MAJOR) return { runtime: { ...c, major: v.major, versionLine: v.line }, attempts: [] };
-  }
-  return { attempts: [] };
-}
 
 const lookup = findJavaSync();
 const java = lookup.runtime;

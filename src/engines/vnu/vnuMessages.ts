@@ -62,6 +62,7 @@ const RULES: ReadonlyArray<[RegExp, string]> = [
   [new RegExp(`^No ${Q} element in scope but an? ${Q} end tag seen`), "vnu:no-element-in-scope"],
   [/^Consider adding a .lang. attribute/, "vnu:missing-lang"],
   [/^This document appears to be written in/, "vnu:lang-mismatch"],
+  [/^This document has heading elements but none of them has a computed heading level of 1/, "vnu:missing-h1"],
   [/^Section lacks heading/, "vnu:section-lacks-heading"],
   [/^Article lacks heading/, "vnu:section-lacks-heading"],
   [/^Trailing slash on void elements/, "vnu:void-trailing-slash"],

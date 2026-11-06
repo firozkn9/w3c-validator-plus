@@ -105,6 +105,52 @@ describe("Web Standards Validator", () => {
       }
     });
 
+    describe("JSP", () => {
+      const jspUri = () => vscode.Uri.file(path.join(workspaceRoot(), "spa-partial-invalid.jsp"));
+      const config = () => vscode.workspace.getConfiguration("webValidator");
+      afterEach(async () => {
+        await config().update("jsp.documentStructure", undefined, vscode.ConfigurationTarget.Global);
+      });
+
+      it("opens .jsp files with the jsp language and reports HTML errors at JSP positions", async () => {
+        const doc = await vscode.workspace.openTextDocument(jspUri());
+        assert.equal(doc.languageId, "jsp");
+        await vscode.window.showTextDocument(doc);
+        const ds = await waitForDiagnostics(doc.uri, (d) => d.some((x) => codeOf(x) === "vnu:img-missing-alt"));
+        const pos = (id: string) => ds.filter((d) => codeOf(d) === id).map((d) => `${d.range.start.line + 1}:${d.range.start.character + 1}`);
+        assert.deepEqual(pos("vnu:img-missing-alt"), ["6:3"]);
+        assert.deepEqual(pos("vnu:obsolete-element"), ["7:3"]);
+        assert.deepEqual(pos("vnu:element-not-allowed-as-child"), ["14:3"]);
+        assert.deepEqual(pos("vnu:missing-doctype"), []);
+      });
+
+      it("reports nothing for JSP with EL, scriptlets and custom tags in attributes", async () => {
+        const uri = vscode.Uri.file(path.join(workspaceRoot(), "spa-partial-valid.jsp"));
+        await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uri));
+        await vscode.commands.executeCommand("webValidator.validateFile");
+        assert.deepEqual(vscode.languages.getDiagnostics(uri).filter(ours).map((d) => d.message), []);
+      });
+
+      it("honours webValidator.jsp.documentStructure", async () => {
+        const file = path.join(workspaceRoot(), "tmp-page.jsp");
+        fs.writeFileSync(file, "<%@ page contentType=\"text/html\" %>\n<!DOCTYPE html>\n<html>\n<head><title>${t}</title></head>\n<body><p>x</p></body>\n</html>\n");
+        try {
+          const uri = vscode.Uri.file(file);
+          await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uri));
+          await vscode.commands.executeCommand("webValidator.validateFile");
+          assert.deepEqual(vscode.languages.getDiagnostics(uri).filter(ours).map(codeOf), [], "ignore mode: no <html> checks");
+
+          await config().update("jsp.documentStructure", "validate", vscode.ConfigurationTarget.Global);
+          const ds = await waitForDiagnostics(uri, (d) => d.some((x) => codeOf(x) === "vnu:missing-lang"));
+          const lang = ds.find((d) => codeOf(d) === "vnu:missing-lang")!;
+          assert.equal(lang.range.start.line, 2, "reported on the <html> line");
+        } finally {
+          await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+          fs.rmSync(file, { force: true });
+        }
+      });
+    });
+
     it("clears diagnostics when the document is closed", async () => {
       const uri = vscode.Uri.file(path.join(workspaceRoot(), "invalid.html"));
       await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uri));

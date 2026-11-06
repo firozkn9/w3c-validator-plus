@@ -50,6 +50,20 @@
     }
   },
   "contributes": {
+    "languages": [
+      {
+        "id": "jsp",
+        "aliases": [
+          "JSP",
+          "Java Server Pages"
+        ],
+        "extensions": [
+          ".jsp",
+          ".jspf",
+          ".tag"
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "webValidator.validateFile",
@@ -148,6 +162,39 @@
           "default": 20000,
           "minimum": 1000,
           "description": "Timeout for a single Nu Html Checker request, in milliseconds."
+        },
+        "webValidator.jsp.documentStructure": {
+          "type": "string",
+          "enum": [
+            "ignore",
+            "validate"
+          ],
+          "enumDescriptions": [
+            "Skip `<!DOCTYPE>`, `<html>`, `<head>` and `<body>`: every JSP is validated as a fragment. Suits includes, SPA partials loaded into an existing element, and header/footer files that open or close `<body>`.",
+            "Validate full pages including their document structure. Files without `<html>` or `<!DOCTYPE>` are still validated as fragments."
+          ],
+          "default": "ignore",
+          "markdownDescription": "How `<!DOCTYPE>`, `<html>`, `<head>` and `<body>` are handled in JSP files. Everything inside them is validated either way."
+        },
+        "webValidator.jsp.customTagPrefixes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "c",
+            "fmt",
+            "fn",
+            "sql",
+            "x",
+            "spring",
+            "form",
+            "sec",
+            "tiles",
+            "s",
+            "t"
+          ],
+          "markdownDescription": "Tag prefixes treated as JSP custom tags (their markup is skipped, their body is validated). `jsp:` and prefixes declared with `<%@ taglib prefix=\"…\" %>` are always included."
         },
         "webValidator.trace": {
           "type": "string",

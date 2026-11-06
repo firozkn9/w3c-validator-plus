@@ -8,6 +8,13 @@ import {
   type SourceDocument,
 } from "./Engine";
 import { MIN_JAVA_MAJOR, type JavaLookupResult, type JavaRuntime } from "../java/javaLocator";
+import {
+  DEFAULT_JSP_OPTIONS,
+  isJspDocument,
+  mapJspFindings,
+  prepareJsp,
+  type JspOptions,
+} from "../preprocess/jspDocument";
 import { Semaphore } from "../util/async";
 import { Emitter } from "../util/emitter";
 import { describeError, type Logger } from "../util/logger";
@@ -28,6 +35,8 @@ export interface VnuEngineDeps {
   logger: Logger;
   /** Resolves a Java runtime; called lazily the first time local validation is needed. */
   findJava(): Promise<JavaLookupResult>;
+  /** JSP settings for a document URI (defaults are used when omitted). */
+  jspOptions?(uri: string): JspOptions;
 }
 
 const MAX_CRASH_RESTARTS = 3;
@@ -67,7 +76,7 @@ export class VnuEngine implements Engine {
   }
 
   supports(languageId: string): boolean {
-    return languageId === "html";
+    return languageId === "html" || languageId === "jsp";
   }
 
   /** Applies new settings; restarts the local service only if something relevant changed. */
@@ -92,13 +101,22 @@ export class VnuEngine implements Engine {
   }
 
   async validate(doc: SourceDocument, signal: AbortSignal): Promise<Finding[]> {
+    if (isJspDocument(doc.languageId, doc.uri)) {
+      const prepared = prepareJsp(doc.text, this.deps.jspOptions?.(doc.uri) ?? DEFAULT_JSP_OPTIONS);
+      const findings = await this.validateHtml(doc.uri, prepared.text, signal);
+      return mapJspFindings(findings, prepared, doc.text);
+    }
+    return this.validateHtml(doc.uri, doc.text, signal);
+  }
+
+  private async validateHtml(uri: string, text: string, signal: AbortSignal): Promise<Finding[]> {
     const kind: VnuInputKind = "html";
-    const response = await this.check(doc.text, kind, signal);
+    const response = await this.check(text, kind, signal);
     let result = response;
     if (response.messages.some(isFatalParseError)) {
-      result = await this.recheckBuffered(doc, kind, signal, response);
+      result = await this.recheckBuffered(uri, text, kind, signal, response);
     }
-    return vnuResponseToFindings(result, doc.text);
+    return vnuResponseToFindings(result, text);
   }
 
   private async check(text: string, kind: VnuInputKind, signal: AbortSignal): Promise<VnuResponse> {
@@ -135,18 +153,19 @@ export class VnuEngine implements Engine {
   }
 
   private async recheckBuffered(
-    doc: SourceDocument,
+    uri: string,
+    text: string,
     kind: VnuInputKind,
     signal: AbortSignal,
     streamed: VnuResponse,
   ): Promise<VnuResponse> {
     const java = this.java;
     if (this.options.mode !== "local" || !java) return streamed;
-    this.deps.logger.verbose(`Streaming parser gave up on ${doc.uri}; re-checking in buffered mode`);
+    this.deps.logger.verbose(`Streaming parser gave up on ${uri}; re-checking in buffered mode`);
     try {
       return await this.cliLimit.run(
         () =>
-          runVnuCli(doc.text, {
+          runVnuCli(text, {
             javaExecutable: java.executable,
             jarPath: this.options.jarPath,
             kind,

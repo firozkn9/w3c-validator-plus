@@ -34,6 +34,7 @@ export function activate(context: vscode.ExtensionContext): void {
         redhatJavaExtensionPath: vscode.extensions.getExtension("redhat.java")?.extensionPath,
         redhatJavaHomes: redhatJavaHomes(),
       }),
+    jspOptions: (uri) => readSettings(vscode.Uri.parse(uri)).jsp,
   });
   vnuEngine = vnu;
   const engines: Engine[] = [vnu];

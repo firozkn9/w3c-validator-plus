@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import type { JspDocumentStructure, JspOptions } from "../preprocess/jspDocument";
+import { DEFAULT_CUSTOM_TAG_PREFIXES } from "../preprocess/jspMasker";
 import type { TraceLevel } from "../util/logger";
 
 export type RunMode = "onSave" | "onType" | "manual";
@@ -14,6 +16,7 @@ export interface Settings {
   vnuServerUrl: string;
   vnuValidateOnType: boolean;
   vnuTimeoutMs: number;
+  jsp: JspOptions;
   trace: TraceLevel;
 }
 
@@ -43,6 +46,10 @@ export function readSettings(scope?: vscode.ConfigurationScope): Settings {
     vnuServerUrl: machineValue(c, "vnu.serverUrl", ""),
     vnuValidateOnType: c.get("vnu.validateOnType", false),
     vnuTimeoutMs: Math.max(1000, c.get("vnu.timeoutMs", 20_000)),
+    jsp: {
+      documentStructure: c.get<JspDocumentStructure>("jsp.documentStructure", "ignore") === "validate" ? "validate" : "ignore",
+      customTagPrefixes: c.get<string[]>("jsp.customTagPrefixes", [...DEFAULT_CUSTOM_TAG_PREFIXES]),
+    },
     trace: c.get<TraceLevel>("trace", "info"),
   };
 }
