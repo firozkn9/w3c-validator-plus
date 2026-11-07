@@ -1,16 +1,41 @@
 # Web Standards Validator for HTML & JSP
 
-> Project: `w3c-validator-plus` · Status: **Phase 2 of 7** (HTML/CSS and JSP validation). Not yet published.
+Validate HTML5, CSS and the HTML inside JSP pages as you work, with every problem shown
+in the editor and the Problems panel. HTML and CSS checks are powered by the
+**Nu Html Checker** (the engine behind validator.w3.org/nu), bundled with the extension and
+run **on your machine**.
 
-Validates HTML5, CSS and the HTML inside JSP files locally in VS Code and shows the results as editor diagnostics.
-The HTML and CSS checks are powered by the Nu Html Checker (the engine behind
-validator.w3.org/nu), bundled with the extension and run on your machine. This
-project is not affiliated with or endorsed by W3C.
+This extension is not affiliated with or endorsed by W3C.
+
+<!-- Screenshot: replace with a real capture before publishing, e.g. images/screenshot.png -->
+
+## Features
+
+- **HTML5 and CSS validation** with the Nu Html Checker, on open and save (or on demand).
+- **JSP support**: scriptlets, EL and JSTL/custom tags are skipped, and the HTML around
+  them is validated at the exact line and column of your `.jsp` file.
+- **Fragments and includes**: SPA partials, `<jsp:include>` files and header/footer files
+  validate cleanly without `<!DOCTYPE>`, `<html>`, `<head>` or `<body>`.
+- **jQuery check** for selectors that match the whole page instead of the current
+  process/tab, in `.js` files and inline `<script>` blocks.
+- **Stable rule ids** with links to the HTML specification in the Problems panel.
+- **Private by default**: nothing is sent over the network.
 
 ## Requirements
 
-- Java 17 or newer. The extension looks in `webValidator.java.home`, then `JAVA_HOME`,
-  then `PATH`, then the JRE bundled with the Red Hat Java extension.
+- **Java 17 or newer** for the HTML/CSS checks. The extension looks in
+  `webValidator.java.home`, then `JAVA_HOME`, then `PATH`, then the JRE bundled with the
+  [Red Hat Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java).
+  Your projects can keep using another Java version (e.g. Java 8); only the validator needs 17+.
+- Without Java, the JavaScript checks still work and the status bar explains what is missing.
+
+## Getting started
+
+1. Install the extension and open a `.html`, `.jsp` or `.js` file.
+2. Problems appear after the first save (the validator needs a few seconds to start the
+   first time, then checks are fast).
+3. Click the status bar item (bottom right) to see the log, or run
+   **Web Validator: Validate Current File** from the Command Palette.
 
 ## JSP files
 
@@ -57,20 +82,70 @@ Custom tag prefixes come from `<%@ taglib prefix="…" %>` directives, `jsp:`, a
 - **HTML produced by EL or custom tags** (e.g. `${rowsHtml}`) is not visible to the
   validator.
 
+## jQuery: selectors scoped to the current process/tab
+
+In single-page applications the same partial is often loaded into several tabs, so
+`$(".name")` finds elements in **every** tab. The rule
+`webvalidator/jquery-unscoped-selector` (setting `webValidator.jquery.unscopedSelector`,
+default `warning`) reports such selectors in `.js` files and in inline `<script>` blocks of
+HTML and JSP files:
+
+> Add current process / tab selector before ".name": it matches the whole page.
+> Example: $(tabSelector + " .name") or $tab.find(".name").
+
+| Reported | Not reported |
+|---|---|
+| `$(".name")`, `jQuery(".name")` | `$(tabSelector + " .name")` (starts with a variable) |
+| `$("input")`, `$("[name=x]")`, `$(":checked")` | `` $(`${tab} .name`) `` |
+| `$(".row-" + id)`, `` $(`.row-${id}`) `` | `$tab.find(".name")`, `$(this).find(".name")` |
+| `$(".name", $tab)` (context argument) | `$("#saveBtn")`, `$("#" + id)` (starts with an `#id`) |
+| `$(document).find(".name")`, `$("body").find(".name")` | `$("<div>")`, `$("body")`, `$(document)`, `$(el)` |
+| `$("#a, .b")` (the `.b` part) | JSP: `$("${tabSel} .name")`, `$("<%= sel %> .name")` |
+
+To accept a single line, add
+`// eslint-disable-next-line webvalidator/jquery-unscoped-selector` above it, or
+`// eslint-disable-line webvalidator/jquery-unscoped-selector` at its end.
+
+Not detected: selectors held in variables (`var s = ".name"; $(s)`), and delegated events
+bound page-wide (`$(document).on("click", ".name", …)`).
+
+## Settings
+
+| Setting | Default | Description |
+|---|---|---|
+| `webValidator.enable` | `true` | Turn validation on or off. |
+| `webValidator.run` | `onSave` | `onSave`, `onType` (debounced) or `manual`. |
+| `webValidator.onTypeDelayMs` | `800` | Debounce delay for `onType`. |
+| `webValidator.languages` | `html`, `jsp`, `javascript` | Language ids to validate. |
+| `webValidator.maxFileSizeKb` | `1024` | Larger files are skipped. |
+| `webValidator.java.home` | | Java 17+ home folder or `java` executable. |
+| `webValidator.vnu.mode` | `local` | `local` (bundled checker) or `server` (your own checker server). |
+| `webValidator.vnu.serverUrl` | | Self-hosted Nu Html Checker URL, used in `server` mode. |
+| `webValidator.vnu.validateOnType` | `false` | Also run the HTML checker while typing. |
+| `webValidator.vnu.timeoutMs` | `20000` | Timeout for one HTML check. |
+| `webValidator.jsp.documentStructure` | `ignore` | `ignore` or `validate` `<!DOCTYPE>`/`<html>`/`<head>`/`<body>` in JSP. |
+| `webValidator.jsp.customTagPrefixes` | `c`, `fmt`, `fn`, … | Extra custom tag prefixes (taglib prefixes are detected automatically). |
+| `webValidator.jquery.unscopedSelector` | `warning` | Severity of the jQuery selector check, or `off`. |
+| `webValidator.javascript.ecmaVersion` | `latest` | ECMAScript version used to parse JavaScript. |
+| `webValidator.trace` | `info` | Log level of the **Web Validator** output channel. |
+
+## Commands
+
+- **Web Validator: Validate Current File**
+- **Web Validator: Restart Validation Engines** (after installing Java or changing its path)
+- **Web Validator: Show Output**
+
 ## Privacy
 
-By default nothing leaves your machine: documents are checked by a Nu Html Checker
-process bound to `127.0.0.1`. Documents are sent elsewhere only if you set
-`webValidator.vnu.mode` to `server` and point `webValidator.vnu.serverUrl` at a server.
+All validation runs locally. The HTML checker runs as a process on your computer that
+only accepts connections from `127.0.0.1`; your code is never sent anywhere. Documents
+leave your machine only if you set `webValidator.vnu.mode` to `server` and point
+`webValidator.vnu.serverUrl` at a server. The extension collects no telemetry.
 
-## Development
+In [untrusted workspaces](https://code.visualstudio.com/docs/editor/workspace-trust),
+workspace values for `webValidator.java.home` and `webValidator.vnu.serverUrl` are ignored.
 
-```sh
-npm install
-npm run build              # bundle to dist/ and copy vnu.jar
-npm run test:unit          # vitest (real-engine tests skip when Java 17+ is missing)
-npm run test:integration   # VS Code + mocha against test/fixtures/workspace
-npm run lint && npm run typecheck
-```
+## License
 
-Press F5 ("Run Extension") to open the fixture workspace in a development host.
+[MIT](LICENSE). The bundled Nu Html Checker and JavaScript libraries are covered by their
+own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

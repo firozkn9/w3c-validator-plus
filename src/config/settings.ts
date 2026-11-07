@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import type { JspDocumentStructure, JspOptions } from "../preprocess/jspDocument";
 import { DEFAULT_CUSTOM_TAG_PREFIXES } from "../preprocess/jspMasker";
+import type { Severity } from "../engines/Engine";
 import type { TraceLevel } from "../util/logger";
 
 export type RunMode = "onSave" | "onType" | "manual";
@@ -17,7 +18,14 @@ export interface Settings {
   vnuValidateOnType: boolean;
   vnuTimeoutMs: number;
   jsp: JspOptions;
+  jqueryUnscopedSelector: Severity | "off";
+  ecmaVersion: "latest" | number;
   trace: TraceLevel;
+}
+
+function ecmaVersionOf(value: unknown): "latest" | number {
+  const n = typeof value === "string" ? Number(value) : value;
+  return typeof n === "number" && Number.isFinite(n) && n >= 3 ? n : "latest";
 }
 
 export const SECTION = "webValidator";
@@ -39,7 +47,7 @@ export function readSettings(scope?: vscode.ConfigurationScope): Settings {
     enable: c.get("enable", true),
     run: c.get<RunMode>("run", "onSave"),
     onTypeDelayMs: Math.max(100, c.get("onTypeDelayMs", 800)),
-    languages: c.get<string[]>("languages", ["html", "jsp"]),
+    languages: c.get<string[]>("languages", ["html", "jsp", "javascript"]),
     maxFileSizeKb: Math.max(1, c.get("maxFileSizeKb", 1024)),
     javaHome: machineValue(c, "java.home", ""),
     vnuMode: c.get<"local" | "server">("vnu.mode", "local"),
@@ -50,6 +58,10 @@ export function readSettings(scope?: vscode.ConfigurationScope): Settings {
       documentStructure: c.get<JspDocumentStructure>("jsp.documentStructure", "ignore") === "validate" ? "validate" : "ignore",
       customTagPrefixes: c.get<string[]>("jsp.customTagPrefixes", [...DEFAULT_CUSTOM_TAG_PREFIXES]),
     },
+    jqueryUnscopedSelector: (["off", "info", "warning", "error"] as const).find(
+      (v) => v === c.get<string>("jquery.unscopedSelector", "warning"),
+    ) ?? "warning",
+    ecmaVersion: ecmaVersionOf(c.get("javascript.ecmaVersion", "latest")),
     trace: c.get<TraceLevel>("trace", "info"),
   };
 }

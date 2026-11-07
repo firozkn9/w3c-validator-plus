@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { readSettings, redhatJavaHomes, SECTION, type Settings } from "./config/settings";
 import { DiagnosticsManager } from "./diagnostics/diagnostics";
 import type { Engine } from "./engines/Engine";
+import { EslintEngine } from "./engines/eslintEngine";
 import { VnuEngine, type VnuEngineOptions } from "./engines/vnuEngine";
 import { locateJava, nodeJavaHost } from "./java/javaLocator";
 import { resetJavaMissingNotice, showJavaMissing } from "./ui/javaGuidance";
@@ -37,7 +38,14 @@ export function activate(context: vscode.ExtensionContext): void {
     jspOptions: (uri) => readSettings(vscode.Uri.parse(uri)).jsp,
   });
   vnuEngine = vnu;
-  const engines: Engine[] = [vnu];
+  const eslint = new EslintEngine({
+    logger,
+    options: (uri) => {
+      const s = readSettings(vscode.Uri.parse(uri));
+      return { ecmaVersion: s.ecmaVersion, jqueryUnscopedSelector: s.jqueryUnscopedSelector, jsp: s.jsp };
+    },
+  });
+  const engines: Engine[] = [vnu, eslint];
 
   const diagnostics = new DiagnosticsManager();
   const service = new ValidationService({
@@ -57,6 +65,7 @@ export function activate(context: vscode.ExtensionContext): void {
     service,
     statusBar,
     { dispose: () => void vnu.dispose() },
+    eslint,
 
     vscode.commands.registerCommand("webValidator.validateFile", async () => {
       const editor = vscode.window.activeTextEditor;

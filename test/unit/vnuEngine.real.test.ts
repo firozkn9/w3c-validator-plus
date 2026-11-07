@@ -85,6 +85,31 @@ describe.skipIf(!java)("Nu Html Checker (real JVM)", () => {
     expect(await engine.validate(doc(read("valid.html")), signal())).toEqual([]);
   });
 
+  it("does not leave a JVM running when disposed during start-up", async () => {
+    const e = new VnuEngine(
+      { mode: "local", serverUrl: "", jarPath, timeoutMs: 30_000 },
+      { logger: nullLogger, findJava: async () => lookup },
+    );
+    const pending = e.validate(doc(read("valid.html")), signal());
+    let pid: number | undefined;
+    for (let i = 0; i < 100 && !pid; i++) {
+      await new Promise((r) => setTimeout(r, 20));
+      pid = (e as unknown as { pendingService?: { child?: { pid?: number } } }).pendingService?.child?.pid;
+    }
+    expect(pid, "JVM was spawned").toBeTypeOf("number");
+    await e.dispose();
+    await expect(pending).rejects.toSatisfy(isAbortError);
+    const alive = (() => {
+      try {
+        process.kill(pid!, 0);
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+    expect(alive, "JVM was stopped").toBe(false);
+  });
+
   it("CLI buffered mode works standalone", async () => {
     const res = await runVnuCli(read("invalid.html"), {
       javaExecutable: java!.executable,

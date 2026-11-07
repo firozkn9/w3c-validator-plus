@@ -56,6 +56,28 @@ describe("Web Standards Validator", () => {
     }
   });
 
+  describe("jQuery selector rule", () => {
+    it("warns about page-wide selectors in .js files", async () => {
+      const uri = vscode.Uri.file(path.join(workspaceRoot(), "tab-script.js"));
+      await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uri));
+      const started = Date.now();
+      let ds: vscode.Diagnostic[] = [];
+      while (Date.now() - started < 30_000) {
+        ds = vscode.languages.getDiagnostics(uri).filter((d) => d.source === "Web Validator");
+        if (ds.length >= 2) break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      assert.deepEqual(
+        ds.map((d) => [d.range.start.line + 1, codeOf(d), d.severity]),
+        [
+          [3, "webvalidator/jquery-unscoped-selector", vscode.DiagnosticSeverity.Warning],
+          [6, "webvalidator/jquery-unscoped-selector", vscode.DiagnosticSeverity.Warning],
+        ],
+      );
+      assert.match(ds[0]!.message, /^Add current process \/ tab selector before "\.name"/);
+    });
+  });
+
   describe("with Java", function () {
     before(function () {
       if (!javaAvailable()) this.skip();

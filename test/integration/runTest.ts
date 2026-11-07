@@ -6,9 +6,12 @@ async function main(): Promise<void> {
   // instance start as plain Node instead of as the editor.
   delete process.env.ELECTRON_RUN_AS_NODE;
   // Compiled to out/test/integration/runTest.js
-  const extensionDevelopmentPath = path.resolve(__dirname, "../../..");
+  const root = path.resolve(__dirname, "../../..");
+  // Set WEBVALIDATOR_EXTENSION_PATH to an unpacked .vsix (an installed extension
+  // folder) to run the same tests against the packaged production build.
+  const extensionDevelopmentPath = process.env.WEBVALIDATOR_EXTENSION_PATH ?? root;
   const extensionTestsPath = path.resolve(__dirname, "./suite/index");
-  const workspace = path.resolve(extensionDevelopmentPath, "test/fixtures/workspace");
+  const workspace = path.resolve(root, "test/fixtures/workspace");
   await runTests({
     version: process.env.VSCODE_TEST_VERSION ?? "stable",
     extensionDevelopmentPath,

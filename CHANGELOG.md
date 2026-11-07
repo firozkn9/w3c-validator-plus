@@ -8,5 +8,8 @@
   even when associated with `html`.
 - `webValidator.jsp.documentStructure` (default `ignore`): skip `<!DOCTYPE>`, `<html>`,
   `<head>`, `<body>` checks so includes, SPA partials and header/footer files validate cleanly.
+- `webvalidator/jquery-unscoped-selector` (setting `webValidator.jquery.unscopedSelector`, default
+  warning): warns about jQuery selectors that match the whole page instead of the current
+  process/tab, in `.js` files and inline `<script>` blocks of HTML and JSP.
 - Java detection: setting, `JAVA_HOME`, `PATH`, Red Hat Java extension.
 - Validate on open/save, or manually; optional self-hosted checker server.

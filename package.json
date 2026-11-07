@@ -3,8 +3,13 @@
   "displayName": "Web Standards Validator for HTML & JSP",
   "description": "Validate HTML5, CSS, JavaScript and JSP locally. HTML and CSS checks are powered by the Nu Html Checker (the engine behind validator.w3.org/nu).",
   "version": "0.1.0",
-  "publisher": "your-publisher-id",
+  "publisher": "FirozKhan",
   "license": "MIT",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1F4E8C",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/your-github-user/w3c-validator-plus.git"
@@ -33,7 +38,8 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:html",
-    "onLanguage:jsp"
+    "onLanguage:jsp",
+    "onLanguage:javascript"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -117,7 +123,8 @@
           },
           "default": [
             "html",
-            "jsp"
+            "jsp",
+            "javascript"
           ],
           "description": "Language identifiers to validate."
         },
@@ -196,6 +203,25 @@
           ],
           "markdownDescription": "Tag prefixes treated as JSP custom tags (their markup is skipped, their body is validated). `jsp:` and prefixes declared with `<%@ taglib prefix=\"…\" %>` are always included."
         },
+        "webValidator.jquery.unscopedSelector": {
+          "type": "string",
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ],
+          "default": "warning",
+          "markdownDescription": "Report jQuery selectors that match the whole page instead of the current process/tab, e.g. `$(\".name\")`. Scoped forms are accepted: a selector that starts with a variable (`$(tabSelector + \" .name\")`, `` $(`${tab} .name`) ``), `.find()` on a scope (`$tab.find(\".name\")`), and selectors starting with an `#id`. Checked in `.js` files and inline `<script>` blocks of HTML and JSP files. Rule id: `webvalidator/jquery-unscoped-selector`."
+        },
+        "webValidator.javascript.ecmaVersion": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "default": "latest",
+          "markdownDescription": "ECMAScript version used to parse JavaScript: `\"latest\"` or a year/number such as `2015` or `5`."
+        },
         "webValidator.trace": {
           "type": "string",
           "enum": [
@@ -219,10 +245,12 @@
     "test:unit": "vitest run",
     "test:integration": "npm run build && tsc -p test/integration && node out/test/integration/runTest.js",
     "vscode:prepublish": "npm run build:prod",
-    "package": "vsce package"
+    "package": "vsce package --no-dependencies",
+    "release:check": "node scripts/check-release.mjs"
   },
   "dependencies": {
-    "vnu-jar": "^26.11.4"
+    "vnu-jar": "^26.11.4",
+    "eslint": "^10.14.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -232,7 +260,6 @@
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.1.0",
     "esbuild": "^0.28.2",
-    "eslint": "^10.14.0",
     "mocha": "^12.0.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",

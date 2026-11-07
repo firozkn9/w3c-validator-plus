@@ -56,6 +56,10 @@ export class VnuEngine implements Engine {
   private _status: EngineStatus = { state: "idle" };
   private readonly statusEmitter = new Emitter<EngineStatus>();
   private service: VnuService | undefined;
+  /** A service whose JVM is starting but not ready yet. */
+  private pendingService: VnuService | undefined;
+  /** Incremented by restart()/dispose() so in-flight start-ups know they are obsolete. */
+  private generation = 0;
   private starting: Promise<VnuService> | undefined;
   private java: JavaRuntime | undefined;
   private crashes = 0;
@@ -93,10 +97,7 @@ export class VnuEngine implements Engine {
   async restart(): Promise<void> {
     this.java = undefined;
     this.crashes = 0;
-    this.starting = undefined;
-    const service = this.service;
-    this.service = undefined;
-    await service?.stop();
+    await this.stopAll();
     this.setStatus({ state: "idle" });
   }
 
@@ -223,17 +224,27 @@ export class VnuEngine implements Engine {
       );
     }
 
+    const generation = this.generation;
     const service = new VnuService({
       javaExecutable: this.java.executable,
       jarPath: this.options.jarPath,
       logger: this.deps.logger,
     });
+    this.pendingService = service;
     try {
       await service.start();
     } catch (err) {
+      if (generation !== this.generation) throw abortError(); // stopped by restart()/dispose()
       this.crashes++;
       this.setStatus({ state: "error", detail: "Nu Html Checker failed to start" });
       throw err;
+    } finally {
+      if (this.pendingService === service) this.pendingService = undefined;
+    }
+    if (generation !== this.generation) {
+      // restart()/dispose() ran while the JVM was starting: do not keep it.
+      await service.stop();
+      throw abortError();
     }
     service.onExit(() => {
       this.crashes++;
@@ -251,10 +262,18 @@ export class VnuEngine implements Engine {
     this.statusEmitter.fire(status);
   }
 
-  async dispose(): Promise<void> {
-    const service = this.service;
+  /** Stops the running service and any service that is still starting. */
+  private async stopAll(): Promise<void> {
+    this.generation++;
+    this.starting = undefined;
+    const services = [this.service, this.pendingService];
     this.service = undefined;
-    await service?.stop();
+    this.pendingService = undefined;
+    await Promise.all(services.map((s) => s?.stop()));
+  }
+
+  async dispose(): Promise<void> {
+    await this.stopAll();
     this.statusEmitter.dispose();
   }
 }
