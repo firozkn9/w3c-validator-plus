@@ -1,0 +1,524 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Web Standards Validator configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "severity": {
+      "enum": [
+        "off",
+        "info",
+        "warning",
+        "error"
+      ]
+    },
+    "ruleSetting": {
+      "description": "Severity, or [severity, options]. Also accepts ESLint-style \"warn\", 0, 1, 2.",
+      "anyOf": [
+        {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error",
+            "warn",
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "array",
+          "items": [
+            {
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error",
+                "warn",
+                0,
+                1,
+                2
+              ]
+            }
+          ],
+          "minItems": 1
+        }
+      ]
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "extends": {
+      "description": "Presets to start from. Default: recommended.",
+      "anyOf": [
+        {
+          "enum": [
+            "recommended",
+            "strict"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "enum": [
+              "recommended",
+              "strict"
+            ]
+          }
+        }
+      ]
+    },
+    "rules": {
+      "description": "Rule severities by id. Wildcards are allowed, e.g. \"vnu:css-*\": \"off\". ESLint core rules use \"eslint:<name>\".",
+      "type": "object",
+      "properties": {
+        "vnu:fatal-parse-error": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:css-invalid-value": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:css-unknown-property": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:css-parse-error": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:css": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:img-missing-alt": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:obsolete-attribute": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:obsolete-element": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:element-not-allowed-as-child": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:attribute-not-allowed": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:missing-required-attribute": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:missing-required-child": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:bad-attribute-value": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:duplicate-id": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:duplicate-attribute": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:missing-doctype": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:unclosed-element": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:end-tag-with-open-elements": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:eof-with-open-elements": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:stray-end-tag": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:stray-start-tag": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:stray-doctype": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:misplaced-in-table": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:no-element-in-scope": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:missing-lang": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:lang-mismatch": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:missing-h1": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:section-lacks-heading": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:void-trailing-slash": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:self-closing-non-void": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:unnecessary-script-type": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "vnu:unnecessary-attribute": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Nu Html Checker (HTML/CSS)"
+        },
+        "eslint:syntax-error": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "JavaScript syntax errors"
+        },
+        "eslint:for-direction": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule for-direction (on by default)"
+        },
+        "eslint:getter-return": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule getter-return (on by default)"
+        },
+        "eslint:no-async-promise-executor": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-async-promise-executor (on by default)"
+        },
+        "eslint:no-compare-neg-zero": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-compare-neg-zero (on by default)"
+        },
+        "eslint:no-cond-assign": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-cond-assign (on by default)"
+        },
+        "eslint:no-const-assign": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-const-assign (on by default)"
+        },
+        "eslint:no-constant-binary-expression": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-constant-binary-expression (on by default)"
+        },
+        "eslint:no-constant-condition": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-constant-condition (on by default)"
+        },
+        "eslint:no-control-regex": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-control-regex (on by default)"
+        },
+        "eslint:no-debugger": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-debugger (on by default)"
+        },
+        "eslint:no-dupe-args": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-dupe-args (on by default)"
+        },
+        "eslint:no-dupe-class-members": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-dupe-class-members (on by default)"
+        },
+        "eslint:no-dupe-else-if": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-dupe-else-if (on by default)"
+        },
+        "eslint:no-dupe-keys": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-dupe-keys (on by default)"
+        },
+        "eslint:no-duplicate-case": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-duplicate-case (on by default)"
+        },
+        "eslint:no-empty-character-class": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-empty-character-class (on by default)"
+        },
+        "eslint:no-empty-pattern": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-empty-pattern (on by default)"
+        },
+        "eslint:no-ex-assign": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-ex-assign (on by default)"
+        },
+        "eslint:no-fallthrough": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-fallthrough (on by default)"
+        },
+        "eslint:no-func-assign": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-func-assign (on by default)"
+        },
+        "eslint:no-import-assign": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-import-assign (on by default)"
+        },
+        "eslint:no-invalid-regexp": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-invalid-regexp (on by default)"
+        },
+        "eslint:no-irregular-whitespace": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-irregular-whitespace (on by default)"
+        },
+        "eslint:no-loss-of-precision": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-loss-of-precision (on by default)"
+        },
+        "eslint:no-misleading-character-class": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-misleading-character-class (on by default)"
+        },
+        "eslint:no-new-native-nonconstructor": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-new-native-nonconstructor (on by default)"
+        },
+        "eslint:no-obj-calls": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-obj-calls (on by default)"
+        },
+        "eslint:no-self-assign": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-self-assign (on by default)"
+        },
+        "eslint:no-setter-return": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-setter-return (on by default)"
+        },
+        "eslint:no-sparse-arrays": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-sparse-arrays (on by default)"
+        },
+        "eslint:no-unexpected-multiline": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-unexpected-multiline (on by default)"
+        },
+        "eslint:no-unreachable": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-unreachable (on by default)"
+        },
+        "eslint:no-unsafe-finally": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-unsafe-finally (on by default)"
+        },
+        "eslint:no-unsafe-negation": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-unsafe-negation (on by default)"
+        },
+        "eslint:no-unsafe-optional-chaining": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-unsafe-optional-chaining (on by default)"
+        },
+        "eslint:no-unused-labels": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-unused-labels (on by default)"
+        },
+        "eslint:no-useless-backreference": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-useless-backreference (on by default)"
+        },
+        "eslint:use-isnan": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule use-isnan (on by default)"
+        },
+        "eslint:valid-typeof": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule valid-typeof (on by default)"
+        },
+        "eslint:no-unused-vars": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-unused-vars (off by default)"
+        },
+        "eslint:eqeqeq": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule eqeqeq (off by default)"
+        },
+        "eslint:no-var": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-var (off by default)"
+        },
+        "eslint:no-undef": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-undef (off by default)"
+        },
+        "eslint:no-implicit-globals": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-implicit-globals (off by default)"
+        },
+        "eslint:no-eval": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule no-eval (off by default)"
+        },
+        "eslint:prefer-const": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "ESLint core rule prefer-const (off by default)"
+        },
+        "webvalidator/jquery-unscoped-selector": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "jQuery selectors that match the whole page instead of the current process/tab. Options: { allowContextArgument, functionNames }"
+        },
+        "webvalidator/no-inline-styles": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Disallow style attributes; use CSS classes instead."
+        },
+        "webvalidator/require-button-type": {
+          "$ref": "#/definitions/ruleSetting",
+          "description": "Require a type on <button>; without it, a button inside a form submits the form."
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/ruleSetting"
+      }
+    },
+    "rulesDirectories": {
+      "description": "Folders with custom rule files (.js, .cjs, .mjs), relative to this file. Loaded only in trusted workspaces.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "jsp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customTagPrefixes": {
+          "description": "Extra custom tag prefixes, in addition to taglib prefixes and settings.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "documentStructure": {
+          "description": "Skip (ignore) or check (validate) <!DOCTYPE>, <html>, <head>, <body> in JSP files.",
+          "enum": [
+            "ignore",
+            "validate"
+          ]
+        }
+      }
+    },
+    "ignoreMessages": {
+      "description": "Regular expressions; matching messages from any engine are hidden.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exclude": {
+      "description": "Glob patterns (relative to this file) of files not to validate.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "customRules": {
+      "description": "Rules declared without code: a CSS selector or a regular expression.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "message"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique id, e.g. custom/img-needs-alt"
+          },
+          "message": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "warning",
+              "error"
+            ],
+            "default": "warning"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "html",
+                "jsp",
+                "javascript"
+              ]
+            },
+            "default": [
+              "html",
+              "jsp"
+            ]
+          },
+          "selector": {
+            "type": "string",
+            "description": "CSS selector matched against elements, e.g. \"img:not([alt])\""
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Regular expression matched against the file text (trusted workspaces only)"
+          },
+          "flags": {
+            "type": "string",
+            "description": "Regular expression flags, e.g. \"i\""
+          },
+          "docsUrl": {
+            "type": "string"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "selector"
+            ]
+          },
+          {
+            "required": [
+              "pattern"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

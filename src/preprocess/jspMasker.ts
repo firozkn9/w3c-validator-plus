@@ -195,6 +195,19 @@ export function maskJsp(source: string, options: JspMaskOptions = {}): JspMaskRe
   };
 
   const mask = (s: number, e: number, kind: MaskKind, output: boolean) => {
+    if (output && state === "raw" && rawEnd === "</script") {
+      // `var n = ${count};` → `var n = 0       ;`: output inside JavaScript becomes a
+      // valid expression so the script still parses.
+      blank(s, e);
+      for (let k = s; k < e; k++) {
+        if (out[k] === " ") {
+          out[k] = "0";
+          break;
+        }
+      }
+      regions.push({ start: s, end: e, kind, placeholder: false });
+      return;
+    }
     const placeholder = output && outputIsPlaceholder(s);
     if (placeholder) {
       fillPlaceholder(s, e);

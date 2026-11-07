@@ -104,8 +104,10 @@ describe("expressions and EL", () => {
     expect(t("${top}<p>x</p>")).toBe(`${sp(6)}<p>x</p>`);
   });
 
-  it("uses spaces inside <script> and <style>", () => {
-    expect(t("<script>var a = ${json};</script>")).toBe(`<script>var a = ${sp(7)};</script>`);
+  it("uses a JavaScript-valid 0 inside <script> and spaces inside <style>", () => {
+    expect(t("<script>var a = ${json};</script>")).toBe(`<script>var a = 0${sp(6)};</script>`);
+    expect(t('<script>var s = "<%= x %>";</script>')).toBe(`<script>var s = "0${sp(7)}";</script>`);
+    expect(t("<script><% if (a) { %>go();<% } %></script>")).toBe(`<script>${sp(14)}go();${sp(7)}</script>`);
     expect(t("<style>p{color:${c}}</style>")).toBe(`<style>p{color:${sp(4)}}</style>`);
   });
 

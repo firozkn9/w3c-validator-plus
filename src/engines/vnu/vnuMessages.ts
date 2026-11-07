@@ -71,6 +71,9 @@ const RULES: ReadonlyArray<[RegExp, string]> = [
   [new RegExp(`^The ${Q} attribute for the ${Q} element is not needed`), "vnu:unnecessary-attribute"],
 ];
 
+/** Stable rule ids for known vnu message shapes (others get a derived `vnu:…` id). */
+export const VNU_RULE_IDS: readonly string[] = [...new Set(RULES.map(([, id]) => id))];
+
 const DOCS: Readonly<Record<string, string>> = {
   "vnu:img-missing-alt": "https://html.spec.whatwg.org/multipage/images.html#alt",
   "vnu:obsolete-element": "https://html.spec.whatwg.org/multipage/obsolete.html#non-conforming-features",

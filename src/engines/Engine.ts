@@ -4,6 +4,8 @@
  * Nothing in this file depends on the `vscode` module so that engines,
  * preprocessors and rules can be unit-tested with plain Node.
  */
+import { EMPTY_CONFIG, type ResolvedConfig } from "../config/webValidatorConfig";
+import { DEFAULT_JSP_OPTIONS, type JspOptions } from "../preprocess/jspDocument";
 
 export type Severity = "error" | "warning" | "info";
 
@@ -37,8 +39,28 @@ export interface Finding {
   severity: Severity;
   message: string;
   range: Range;
+  /** A safe automatic fix (offered as the preferred quick fix). */
   fix?: Fix;
+  /** Alternative fixes the user may choose from (e.g. ESLint suggestions). */
+  suggestions?: Fix[];
   docsUrl?: string;
+}
+
+/** Per-run settings shared by all engines. */
+export interface ValidationContext {
+  config: ResolvedConfig;
+  jsp: JspOptions;
+  ecmaVersion: "latest" | number;
+  /** Workspace trust: custom rule code only runs when true. */
+  trusted: boolean;
+  /** Folder whose package.json lists rule packs. */
+  workspaceRoot?: string;
+  /** Language for fixes such as adding lang="…" (default "en"). */
+  locale?: string;
+}
+
+export function defaultContext(): ValidationContext {
+  return { config: EMPTY_CONFIG, jsp: DEFAULT_JSP_OPTIONS, ecmaVersion: "latest", trusted: false };
 }
 
 /** A snapshot of a document handed to an engine. */
@@ -70,7 +92,7 @@ export interface Engine {
    * (or resolve early) when `signal` is aborted and must never throw for
    * ordinary validation problems — those are findings.
    */
-  validate(doc: SourceDocument, signal: AbortSignal): Promise<Finding[]>;
+  validate(doc: SourceDocument, signal: AbortSignal, ctx?: ValidationContext): Promise<Finding[]>;
   onStatusChange(listener: (status: EngineStatus) => void): { dispose(): void };
   dispose(): void | Promise<void>;
 }

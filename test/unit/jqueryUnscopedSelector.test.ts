@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { EslintEngine, type EslintEngineOptions } from "../../src/engines/eslintEngine";
-import type { Finding } from "../../src/engines/Engine";
-import { DEFAULT_JSP_OPTIONS } from "../../src/preprocess/jspDocument";
+import { EslintEngine, JQUERY_RULE_ID } from "../../src/engines/eslintEngine";
+import { defaultContext, type Finding } from "../../src/engines/Engine";
+import { normalizeLayer, resolveConfig } from "../../src/config/webValidatorConfig";
 import { extractScripts } from "../../src/preprocess/scriptExtractor";
 import { DYNAMIC, unscopedSegments } from "../../src/rules/builtin/jquerySelector";
 import { nullLogger } from "../../src/util/logger";
 
-const options: EslintEngineOptions = { ecmaVersion: "latest", jqueryUnscopedSelector: "warning", jsp: DEFAULT_JSP_OPTIONS };
-const engine = (o: Partial<EslintEngineOptions> = {}) =>
-  new EslintEngine({ logger: nullLogger, options: () => ({ ...options, ...o }) });
+const engine = new EslintEngine({ logger: nullLogger });
 
-async function lint(code: string, languageId = "javascript", uri = "file:///app/a.js", o?: Partial<EslintEngineOptions>) {
-  return engine(o).validate({ uri, languageId, text: code, version: 1 }, new AbortController().signal);
+/** Lints and returns only jQuery-rule findings (unless `all`). */
+async function lint(code: string, languageId = "javascript", uri = "file:///app/a.js", rules?: Record<string, unknown>, all = false) {
+  const ctx = { ...defaultContext(), config: resolveConfig([normalizeLayer({ rules: rules ?? {} }, "test", undefined).layer]) };
+  const fs = await engine.validate({ uri, languageId, text: code, version: 1 }, new AbortController().signal, ctx);
+  return all ? fs : fs.filter((f) => f.ruleId === JQUERY_RULE_ID);
 }
 const flagged = async (code: string) => (await lint(code)).length > 0;
 
@@ -107,8 +108,8 @@ describe("jquery-unscoped-selector", () => {
   });
 
   it("uses the configured severity and can be turned off", async () => {
-    expect((await lint('$(".x")', "javascript", "file:///a.js", { jqueryUnscopedSelector: "error" }))[0]?.severity).toBe("error");
-    expect(await lint('$(".x")', "javascript", "file:///a.js", { jqueryUnscopedSelector: "off" })).toEqual([]);
+    expect((await lint('$(".x")', "javascript", "file:///a.js", { [JQUERY_RULE_ID]: "error" }))[0]?.severity).toBe("error");
+    expect(await lint('$(".x")', "javascript", "file:///a.js", { [JQUERY_RULE_ID]: "off" })).toEqual([]);
   });
 
   it("can be suppressed per line with ESLint disable comments", async () => {
@@ -121,8 +122,12 @@ describe("jquery-unscoped-selector", () => {
     expect((await lint(code)).map((f) => f.range.start.line)).toEqual([3]);
   });
 
-  it("skips files that do not parse instead of failing", async () => {
-    expect(await lint('$(".x"')).toEqual([]);
+  it("reports a syntax error (not a selector warning) for files that do not parse", async () => {
+    expect((await lint('$(".x"', "javascript", "file:///a.js", undefined, true)).map((f) => f.ruleId)).toEqual(["eslint:syntax-error"]);
+  });
+
+  it("accepts the context argument when allowContextArgument is set", async () => {
+    expect(await lint('$(".name", $tab)', "javascript", "file:///a.js", { [JQUERY_RULE_ID]: ["warning", { allowContextArgument: true }] })).toEqual([]);
   });
 
   it("supports ES modules", async () => {

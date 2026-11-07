@@ -6,6 +6,7 @@ import {
   type EngineStatus,
   type Finding,
   type SourceDocument,
+  type ValidationContext,
 } from "./Engine";
 import { MIN_JAVA_MAJOR, type JavaLookupResult, type JavaRuntime } from "../java/javaLocator";
 import {
@@ -101,9 +102,10 @@ export class VnuEngine implements Engine {
     this.setStatus({ state: "idle" });
   }
 
-  async validate(doc: SourceDocument, signal: AbortSignal): Promise<Finding[]> {
+  async validate(doc: SourceDocument, signal: AbortSignal, ctx?: ValidationContext): Promise<Finding[]> {
     if (isJspDocument(doc.languageId, doc.uri)) {
-      const prepared = prepareJsp(doc.text, this.deps.jspOptions?.(doc.uri) ?? DEFAULT_JSP_OPTIONS);
+      const jsp = ctx?.jsp ?? this.deps.jspOptions?.(doc.uri) ?? DEFAULT_JSP_OPTIONS;
+      const prepared = prepareJsp(doc.text, jsp);
       const findings = await this.validateHtml(doc.uri, prepared.text, signal);
       return mapJspFindings(findings, prepared, doc.text);
     }

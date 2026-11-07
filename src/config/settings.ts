@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
-import type { JspDocumentStructure, JspOptions } from "../preprocess/jspDocument";
+import type { JspDocumentStructure } from "../preprocess/jspDocument";
 import { DEFAULT_CUSTOM_TAG_PREFIXES } from "../preprocess/jspMasker";
-import type { Severity } from "../engines/Engine";
 import type { TraceLevel } from "../util/logger";
 
 export type RunMode = "onSave" | "onType" | "manual";
@@ -17,23 +16,26 @@ export interface Settings {
   vnuServerUrl: string;
   vnuValidateOnType: boolean;
   vnuTimeoutMs: number;
-  jsp: JspOptions;
-  jqueryUnscopedSelector: Severity | "off";
+  jsp: {
+    mode: "masked" | "rendered";
+    documentStructure: JspDocumentStructure;
+    customTagPrefixes: string[];
+    renderedBaseUrl: string;
+    webRoot: string;
+  };
   ecmaVersion: "latest" | number;
+  /** Raw rule-related settings, normalized like a .webvalidator.json file. */
+  configLayer: Record<string, unknown>;
   trace: TraceLevel;
-}
-
-function ecmaVersionOf(value: unknown): "latest" | number {
-  const n = typeof value === "string" ? Number(value) : value;
-  return typeof n === "number" && Number.isFinite(n) && n >= 3 ? n : "latest";
 }
 
 export const SECTION = "webValidator";
 
 /**
- * Settings that cause a program to run or data to be sent somewhere. VS Code
- * already ignores workspace values for them in untrusted workspaces (see
- * `restrictedConfigurations` in package.json); this re-checks it defensively.
+ * Settings that cause a program to run, code to load, or data to be sent
+ * somewhere. VS Code already ignores workspace values for most of them in
+ * untrusted workspaces (`restrictedConfigurations` in package.json); this
+ * re-checks it defensively.
  */
 function machineValue<T>(config: vscode.WorkspaceConfiguration, key: string, fallback: T): T {
   if (vscode.workspace.isTrusted) return config.get<T>(key, fallback);
@@ -41,8 +43,23 @@ function machineValue<T>(config: vscode.WorkspaceConfiguration, key: string, fal
   return inspected?.globalValue ?? inspected?.defaultValue ?? fallback;
 }
 
+function ecmaVersionOf(value: unknown): "latest" | number {
+  const n = typeof value === "string" ? Number(value) : value;
+  return typeof n === "number" && Number.isFinite(n) && n >= 3 ? n : "latest";
+}
+
 export function readSettings(scope?: vscode.ConfigurationScope): Settings {
   const c = vscode.workspace.getConfiguration(SECTION, scope);
+  const configLayer: Record<string, unknown> = {};
+  const rules = c.get<Record<string, unknown>>("rules", {});
+  if (rules && Object.keys(rules).length) configLayer.rules = rules;
+  for (const key of ["ignoreMessages", "exclude", "customRules"]) {
+    const v = c.get<unknown[]>(key, []);
+    if (Array.isArray(v) && v.length) configLayer[key] = v;
+  }
+  const dirs = machineValue<string[]>(c, "rulesDirectories", []);
+  if (Array.isArray(dirs) && dirs.length) configLayer.rulesDirectories = dirs;
+
   return {
     enable: c.get("enable", true),
     run: c.get<RunMode>("run", "onSave"),
@@ -55,13 +72,14 @@ export function readSettings(scope?: vscode.ConfigurationScope): Settings {
     vnuValidateOnType: c.get("vnu.validateOnType", false),
     vnuTimeoutMs: Math.max(1000, c.get("vnu.timeoutMs", 20_000)),
     jsp: {
+      mode: c.get<string>("jsp.mode", "masked") === "rendered" ? "rendered" : "masked",
       documentStructure: c.get<JspDocumentStructure>("jsp.documentStructure", "ignore") === "validate" ? "validate" : "ignore",
       customTagPrefixes: c.get<string[]>("jsp.customTagPrefixes", [...DEFAULT_CUSTOM_TAG_PREFIXES]),
+      renderedBaseUrl: machineValue(c, "jsp.renderedBaseUrl", ""),
+      webRoot: c.get("jsp.webRoot", "src/main/webapp"),
     },
-    jqueryUnscopedSelector: (["off", "info", "warning", "error"] as const).find(
-      (v) => v === c.get<string>("jquery.unscopedSelector", "warning"),
-    ) ?? "warning",
     ecmaVersion: ecmaVersionOf(c.get("javascript.ecmaVersion", "latest")),
+    configLayer,
     trace: c.get<TraceLevel>("trace", "info"),
   };
 }

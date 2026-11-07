@@ -12,12 +12,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-github-user/w3c-validator-plus.git"
+    "url": "https://github.com/firozkn9/w3c-validator-plus.git"
   },
   "bugs": {
-    "url": "https://github.com/your-github-user/w3c-validator-plus/issues"
+    "url": "https://github.com/firozkn9/w3c-validator-plus/issues"
   },
-  "homepage": "https://github.com/your-github-user/w3c-validator-plus#readme",
+  "homepage": "https://github.com/firozkn9/w3c-validator-plus#readme",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -39,15 +39,18 @@
   "activationEvents": [
     "onLanguage:html",
     "onLanguage:jsp",
-    "onLanguage:javascript"
+    "onLanguage:javascript",
+    "workspaceContains:**/.webvalidator.json"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "In untrusted workspaces only the built-in engines run. Workspace values for the Java path and validator server URL are ignored, and custom rule code is never loaded.",
+      "description": "In untrusted workspaces custom rule code and regular-expression rules are not run, and workspace values for the Java path, validator server URL, rules directories and rendered-page URL are ignored. The built-in checks and selector rules still run.",
       "restrictedConfigurations": [
         "webValidator.java.home",
-        "webValidator.vnu.serverUrl"
+        "webValidator.vnu.serverUrl",
+        "webValidator.rulesDirectories",
+        "webValidator.jsp.renderedBaseUrl"
       ]
     },
     "virtualWorkspaces": {
@@ -68,12 +71,53 @@
           ".jspf",
           ".tag"
         ]
+      },
+      {
+        "id": "jsonc",
+        "filenames": [
+          ".webvalidator.json"
+        ]
       }
     ],
     "commands": [
       {
         "command": "webValidator.validateFile",
         "title": "Validate Current File",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.validateWorkspace",
+        "title": "Validate Workspace",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.clearProblems",
+        "title": "Clear Workspace Problems",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.validateRunningPage",
+        "title": "Validate Running Page…",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.showRenderedPage",
+        "title": "Show Rendered Page",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.createCustomRule",
+        "title": "Create Custom Rule",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.openConfig",
+        "title": "Open Configuration File",
+        "category": "Web Validator"
+      },
+      {
+        "command": "webValidator.disableRuleInConfig",
+        "title": "Disable Rule in Configuration",
         "category": "Web Validator"
       },
       {
@@ -133,6 +177,59 @@
           "default": 1024,
           "minimum": 1,
           "description": "Files larger than this (in KB) are not validated."
+        },
+        "webValidator.rules": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "enum": [
+                  "off",
+                  "info",
+                  "warning",
+                  "error"
+                ]
+              },
+              {
+                "type": "array"
+              }
+            ]
+          },
+          "markdownDescription": "Rule severities by id, e.g. `{ \"vnu:missing-lang\": \"off\", \"eslint:no-unused-vars\": \"warning\", \"webvalidator/jquery-unscoped-selector\": \"error\" }`. Wildcards work (`\"vnu:css-*\": \"off\"`). A `.webvalidator.json` file takes precedence over this setting."
+        },
+        "webValidator.ignoreMessages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Regular expressions; matching messages from any engine are hidden."
+        },
+        "webValidator.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Glob patterns (relative to the workspace folder) of files not to validate, e.g. `**/generated/**`."
+        },
+        "webValidator.customRules": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "Rules without code: `{ \"id\": \"custom/x\", \"message\": \"…\", \"selector\": \"img:not([alt])\" }` or with a `pattern` (regular expression). See the README.",
+          "items": {
+            "type": "object"
+          }
+        },
+        "webValidator.rulesDirectories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "machine-overridable",
+          "markdownDescription": "Folders with custom rule files, relative to the workspace folder. Only loaded in trusted workspaces."
         },
         "webValidator.java.home": {
           "type": "string",
@@ -203,16 +300,29 @@
           ],
           "markdownDescription": "Tag prefixes treated as JSP custom tags (their markup is skipped, their body is validated). `jsp:` and prefixes declared with `<%@ taglib prefix=\"…\" %>` are always included."
         },
-        "webValidator.jquery.unscopedSelector": {
+        "webValidator.jsp.mode": {
           "type": "string",
           "enum": [
-            "off",
-            "info",
-            "warning",
-            "error"
+            "masked",
+            "rendered"
           ],
-          "default": "warning",
-          "markdownDescription": "Report jQuery selectors that match the whole page instead of the current process/tab, e.g. `$(\".name\")`. Scoped forms are accepted: a selector that starts with a variable (`$(tabSelector + \" .name\")`, `` $(`${tab} .name`) ``), `.find()` on a scope (`$tab.find(\".name\")`), and selectors starting with an `#id`. Checked in `.js` files and inline `<script>` blocks of HTML and JSP files. Rule id: `webvalidator/jquery-unscoped-selector`."
+          "enumDescriptions": [
+            "Validate the HTML in the JSP source file (JSP constructs are masked).",
+            "Validate the page your running application serves for the JSP (see webValidator.jsp.renderedBaseUrl)."
+          ],
+          "default": "masked",
+          "markdownDescription": "How JSP files are validated. In `rendered` mode the JSP itself shows one summary problem; open the rendered page with its quick fix."
+        },
+        "webValidator.jsp.renderedBaseUrl": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "markdownDescription": "Base URL of the running application for `rendered` mode and **Validate Running Page**, e.g. `http://localhost:8080/myapp`."
+        },
+        "webValidator.jsp.webRoot": {
+          "type": "string",
+          "default": "src/main/webapp",
+          "markdownDescription": "Folder (relative to the workspace folder) that maps to `webValidator.jsp.renderedBaseUrl`."
         },
         "webValidator.javascript.ecmaVersion": {
           "type": [
@@ -233,7 +343,25 @@
           "description": "Logging level for the Web Validator output channel."
         }
       }
-    }
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "webValidator.disableRuleInConfig",
+          "when": "false"
+        },
+        {
+          "command": "webValidator.showRenderedPage",
+          "when": "editorLangId == jsp"
+        }
+      ]
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": ".webvalidator.json",
+        "url": "./schemas/webvalidator.schema.json"
+      }
+    ]
   },
   "scripts": {
     "build": "node esbuild.mjs",
@@ -249,8 +377,9 @@
     "release:check": "node scripts/check-release.mjs"
   },
   "dependencies": {
-    "vnu-jar": "^26.11.4",
-    "eslint": "^10.14.0"
+    "eslint": "^10.14.0",
+    "parse5": "^8.1.0",
+    "vnu-jar": "^26.11.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
