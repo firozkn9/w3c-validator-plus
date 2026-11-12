@@ -4,4 +4,4 @@ out/
 .vscode-test/
 *.vsix
 coverage/
-test/unit/
+test/

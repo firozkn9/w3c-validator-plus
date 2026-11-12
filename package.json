@@ -382,7 +382,7 @@
     "build:prod": "node scripts/build.ts --production",
     "watch": "node scripts/build.ts --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src test scripts",
+    "lint": "eslint .",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run --passWithNoTests",
     "test:integration": "npm run build && tsc -p test/integration && node out/test/integration/runTest.js",

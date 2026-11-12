@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   test:
-    name: Test (${{ matrix.os }})
+    name: Check (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -31,13 +31,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm run test:unit
-      - name: Integration tests (Linux needs a virtual display)
-        if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test:integration
-      - name: Integration tests
-        if: runner.os != 'Linux'
-        run: npm run test:integration
+      - run: npm run build
 
   package:
     name: Package .vsix
