@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "node16",
-    "moduleResolution": "node16",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "lib": ["ES2022"],
     "types": ["node"],
     "strict": true,
@@ -14,8 +14,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["src/**/*.ts", "test/unit/**/*.ts", "vitest.config.mts"]
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "test/unit/**/*.ts", "*.config.ts"]
 }

@@ -378,17 +378,19 @@
     ]
   },
   "scripts": {
-    "build": "node esbuild.mjs",
-    "build:prod": "node esbuild.mjs --production",
-    "watch": "node esbuild.mjs --watch",
+    "build": "node scripts/build.ts",
+    "build:prod": "node scripts/build.ts --production",
+    "watch": "node scripts/build.ts --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src test",
+    "lint": "eslint src test scripts",
     "test": "npm run test:unit && npm run test:integration",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run --passWithNoTests",
     "test:integration": "npm run build && tsc -p test/integration && node out/test/integration/runTest.js",
     "vscode:prepublish": "npm run build:prod",
     "package": "vsce package --no-dependencies",
-    "release:check": "node scripts/check-release.mjs"
+    "release:check": "node scripts/check-release.ts",
+    "icon": "node scripts/icon.ts",
+    "schema": "vitest run test/unit/schema.test.ts"
   },
   "dependencies": {
     "eslint": "^10.14.0",
@@ -403,6 +405,7 @@
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.1.0",
     "esbuild": "^0.28.2",
+    "jiti": "^2.7.0",
     "mocha": "^12.0.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",

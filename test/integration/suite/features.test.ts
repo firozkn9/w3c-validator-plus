@@ -41,7 +41,7 @@ async function open(uri: vscode.Uri): Promise<vscode.TextEditor> {
   return vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uri));
 }
 
-describe("Phase 3–6 features", function () {
+describe("Configuration, quick fixes and custom rules", function () {
   before(function () {
     if (!javaAvailable()) this.skip();
   });

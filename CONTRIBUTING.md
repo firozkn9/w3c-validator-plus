@@ -2,7 +2,7 @@
 
 ## Setup
 
-Requirements: Node.js 20+, and Java 17+ for the HTML checker tests.
+Requirements: Node.js 22.18+ (it runs the TypeScript build scripts directly), and Java 17+ for the HTML checker tests.
 
 ```sh
 npm install
@@ -16,11 +16,21 @@ Press F5 ("Run Extension") to open `test/fixtures/workspace` in a development ho
 
 ## Project layout
 
-- `src/engines/` – validation engines (Nu Html Checker, ESLint) producing `Finding`s
-- `src/preprocess/` – JSP masking and `<script>` extraction (positions are preserved)
-- `src/rules/builtin/` – built-in rules such as `jquery-unscoped-selector`
-- `src/java/` – Java runtime detection
-- `scripts/` – build helpers (third-party notices, icon, release check)
+Everything in `src/` is flat. The modules that don't import `vscode` can be unit-tested with plain Node:
+
+- `core.ts` – shared types (`Finding`, `Engine`) and small helpers
+- `config.ts` – `.webvalidator.json` model, JSONC parsing and comment-preserving edits
+- `jsp.ts` – JSP masking and `<script>` extraction (positions are preserved)
+- `vnu.ts`, `vnuMessages.ts` – Nu Html Checker engine and message mapping
+- `eslint.ts` – JavaScript engine and the `jquery-unscoped-selector` rule
+- `rules.ts`, `ruleLoader.ts`, `selector.ts` – custom rule API, runner and loader
+- `suppressions.ts` – `webvalidator-disable` comments
+- `java.ts`, `pages.ts` – Java detection, fetching pages from a running app
+
+VS Code glue: `extension.ts`, `validationService.ts`, `settings.ts`, `diagnostics.ts`, `commands.ts`.
+
+`scripts/` holds the build (`build.ts`), third-party notices, the config schema, the icon and the
+release check. Node runs them directly (`node scripts/build.ts`); no compile step.
 
 ## Releasing
 

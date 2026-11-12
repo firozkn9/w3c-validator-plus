@@ -2,6 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
+    "module": "node16",
+    "moduleResolution": "node16",
+    "allowImportingTsExtensions": false,
     "outDir": "../../out",
     "rootDir": "../..",
     "types": ["node", "mocha"],
