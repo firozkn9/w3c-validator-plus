@@ -8,3 +8,4 @@
 !THIRD_PARTY_NOTICES.md
 !images/icon.png
 !schemas/webvalidator.schema.json
+!syntaxes/*.tmLanguage.json

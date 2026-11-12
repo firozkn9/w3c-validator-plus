@@ -2,7 +2,7 @@
   "name": "w3c-validator-plus",
   "displayName": "Web Standards Validator for HTML & JSP",
   "description": "Validate HTML5, CSS, JavaScript and JSP locally. HTML and CSS checks are powered by the Nu Html Checker (the engine behind validator.w3.org/nu).",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "FirozKhan",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -61,21 +61,35 @@
   "contributes": {
     "languages": [
       {
-        "id": "jsp",
-        "aliases": [
-          "JSP",
-          "Java Server Pages"
-        ],
+        "id": "html",
         "extensions": [
-          ".jsp",
-          ".jspf",
-          ".tag"
+          ".jspf"
         ]
       },
       {
         "id": "jsonc",
         "filenames": [
           ".webvalidator.json"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "scopeName": "text.html.jsp.tags.injection",
+        "path": "./syntaxes/jsp-tags.injection.tmLanguage.json",
+        "injectTo": [
+          "text.html.derivative"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.jsp": "java",
+          "meta.embedded.line.jsp": "java"
+        }
+      },
+      {
+        "scopeName": "text.html.jsp.el.injection",
+        "path": "./syntaxes/jsp-el.injection.tmLanguage.json",
+        "injectTo": [
+          "text.html.derivative"
         ]
       }
     ],

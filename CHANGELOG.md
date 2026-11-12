@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.1 (2026-11-12)
+
+- **JSP files keep their colours.** 0.1.0 registered `.jsp`, `.jspf` and `.tag` as a separate
+  "JSP" language without colouring rules, so installing it turned JSP files into plain text and
+  switched off VS Code's HTML features (completions, Emmet, tag closing) for them. JSP files now
+  stay in VS Code's HTML language and are still validated as JSP.
+- **JSP colouring**: on top of the HTML colours, `<%@ … %>` directives, `<%-- … --%>` comments,
+  `<% … %>`, `<%= … %>` and `<%! … %>` (coloured as Java) and `${…}` / `#{…}` expressions are
+  highlighted.
+- `.jspf` files open as HTML. `.tag` files are no longer claimed, to avoid clashing with other
+  tools that use that extension; associate them with `html` to validate them on open (Validate
+  Workspace still checks them).
+- `webValidator.languages` still treats JSP files as `jsp`, so removing `jsp` from it turns off
+  JSP validation as before.
+
 ## 0.1.0 (2026-11-08)
 
 First release.

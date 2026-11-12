@@ -31,6 +31,14 @@ export function languageForPath(fsPath: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Language id as used by `webValidator.languages`: JSP files count as "jsp" even though
+ * VS Code opens them with the built-in "html" language.
+ */
+export function settingsLanguage(languageId: string, uri: string): string {
+  return languageId !== "javascript" && isJspDocument(languageId, uri) ? "jsp" : languageId;
+}
+
 export interface ValidationTarget {
   uri: vscode.Uri;
   languageId: string;
@@ -93,7 +101,7 @@ export class ValidationService implements vscode.Disposable {
 
   /** Whether this document is one we would validate at all (language + scheme). */
   isRelevant(doc: vscode.TextDocument, settings: Settings = readSettings(doc.uri)): boolean {
-    return settings.enable && SCHEMES.has(doc.uri.scheme) && settings.languages.includes(doc.languageId);
+    return settings.enable && SCHEMES.has(doc.uri.scheme) && settings.languages.includes(settingsLanguage(doc.languageId, doc.uri.toString()));
   }
 
   revalidateOpenDocuments(): void {
@@ -169,8 +177,9 @@ export class ValidationService implements vscode.Disposable {
 
     if (!settings.enable) return { ran: [], skipped: "Validation is disabled (webValidator.enable)." };
     if (!internal && !SCHEMES.has(uri.scheme)) return { ran: [], skipped: `Documents with the '${uri.scheme}' scheme are not validated.` };
-    if (!internal && !settings.languages.includes(target.languageId)) {
-      return { ran: [], skipped: `Language '${target.languageId}' is not in webValidator.languages.` };
+    const language = settingsLanguage(target.languageId, key);
+    if (!internal && !settings.languages.includes(language)) {
+      return { ran: [], skipped: `Language '${language}' is not in webValidator.languages.` };
     }
     const sizeKb = utf8ByteLength(target.text) / 1024;
     if (sizeKb > settings.maxFileSizeKb) {

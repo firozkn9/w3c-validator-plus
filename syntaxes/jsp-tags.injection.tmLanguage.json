@@ -1,0 +1,82 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "JSP tags (injected into HTML)",
+  "scopeName": "text.html.jsp.tags.injection",
+  "injectionSelector": "L:text.html.derivative -comment.block.jsp -meta.embedded.block.jsp -meta.embedded.line.jsp -meta.directive.jsp",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#directive" },
+    { "include": "#declaration" },
+    { "include": "#expression" },
+    { "include": "#scriptlet" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.block.jsp",
+      "begin": "<%--",
+      "end": "--%>",
+      "beginCaptures": { "0": { "name": "punctuation.definition.comment.begin.jsp" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.comment.end.jsp" } }
+    },
+    "directive": {
+      "name": "meta.directive.jsp",
+      "begin": "(<%@)\\s*([A-Za-z]+)?",
+      "end": "%>",
+      "beginCaptures": {
+        "1": { "name": "punctuation.section.embedded.begin.jsp" },
+        "2": { "name": "keyword.control.directive.jsp" }
+      },
+      "endCaptures": { "0": { "name": "punctuation.section.embedded.end.jsp" } },
+      "patterns": [
+        {
+          "match": "([A-Za-z_:][\\w:.-]*)\\s*(=)",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.jsp" },
+            "2": { "name": "punctuation.separator.key-value.jsp" }
+          }
+        },
+        {
+          "name": "string.quoted.double.jsp",
+          "begin": "\"",
+          "end": "\"",
+          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.jsp" } },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.jsp" } }
+        },
+        {
+          "name": "string.quoted.single.jsp",
+          "begin": "'",
+          "end": "'",
+          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.jsp" } },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.jsp" } }
+        }
+      ]
+    },
+    "declaration": {
+      "name": "meta.embedded.block.jsp",
+      "contentName": "source.java",
+      "begin": "<%!",
+      "end": "%>",
+      "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.jsp" } },
+      "endCaptures": { "0": { "name": "punctuation.section.embedded.end.jsp" } },
+      "patterns": [{ "include": "source.java" }]
+    },
+    "expression": {
+      "name": "meta.embedded.line.jsp",
+      "contentName": "source.java",
+      "begin": "<%=",
+      "end": "%>",
+      "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.jsp" } },
+      "endCaptures": { "0": { "name": "punctuation.section.embedded.end.jsp" } },
+      "patterns": [{ "include": "source.java" }]
+    },
+    "scriptlet": {
+      "name": "meta.embedded.block.jsp",
+      "contentName": "source.java",
+      "begin": "<%",
+      "end": "%>",
+      "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.jsp" } },
+      "endCaptures": { "0": { "name": "punctuation.section.embedded.end.jsp" } },
+      "patterns": [{ "include": "source.java" }]
+    }
+  }
+}

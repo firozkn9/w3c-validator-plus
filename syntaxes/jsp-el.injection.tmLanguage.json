@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "JSP expression language (injected into HTML)",
+  "scopeName": "text.html.jsp.el.injection",
+  "injectionSelector": "L:text.html.derivative -source -comment -meta.embedded.block.jsp -meta.embedded.line.jsp -meta.directive.jsp -meta.embedded.expression.el",
+  "patterns": [{ "include": "#el" }],
+  "repository": {
+    "el": {
+      "name": "meta.embedded.expression.el",
+      "begin": "(?<!\\\\)[$#]\\{",
+      "end": "\\}",
+      "beginCaptures": { "0": { "name": "punctuation.definition.template-expression.begin.el" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.template-expression.end.el" } },
+      "patterns": [
+        {
+          "name": "string.quoted.single.el",
+          "begin": "'",
+          "end": "'",
+          "patterns": [{ "name": "constant.character.escape.el", "match": "\\\\." }]
+        },
+        {
+          "name": "string.quoted.double.el",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [{ "name": "constant.character.escape.el", "match": "\\\\." }]
+        },
+        { "name": "keyword.operator.word.el", "match": "\\b(?:and|or|not|eq|ne|lt|gt|le|ge|div|mod|empty|instanceof)\\b" },
+        { "name": "constant.language.el", "match": "\\b(?:true|false|null)\\b" },
+        { "name": "constant.numeric.el", "match": "\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b" },
+        {
+          "match": "\\b([A-Za-z_$][\\w$]*)\\s*(?=\\()",
+          "captures": { "1": { "name": "entity.name.function.el" } }
+        },
+        { "name": "variable.other.el", "match": "\\b[A-Za-z_$][\\w$]*\\b" },
+        { "name": "keyword.operator.el", "match": "==|!=|<=|>=|&&|\\|\\||->|[-+*/%<>!?:=]" },
+        { "name": "punctuation.accessor.el", "match": "\\." },
+        { "name": "punctuation.separator.el", "match": "[,;]" }
+      ]
+    }
+  }
+}

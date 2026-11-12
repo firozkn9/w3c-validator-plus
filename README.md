@@ -112,8 +112,22 @@ file. The quick fixes **Disable … for this line / this file** insert these com
 
 ## JSP files
 
-`.jsp`, `.jspf` and `.tag` files are validated even if you associate them with the
-`html` language. Before validation, JSP-only constructs are replaced with filler of the
+`.jsp` and `.jspf` files open with VS Code's built-in HTML support, so HTML colours,
+completions and Emmet keep working. The extension adds colours for JSP on top: directives,
+`<%-- --%>` comments, scriptlets and expressions (coloured as Java), and `${…}` / `#{…}`
+expressions. `.tag` files are validated by **Validate Workspace**; to validate them as you
+edit, associate them with HTML (`"files.associations": { "*.tag": "html" }`).
+
+VS Code's built-in HTML support also checks `<script>` blocks, but it doesn't understand JSP,
+so `var n = ${count};` shows errors such as "',' expected" with the source `javascript`.
+Those come from VS Code, not from this extension. This extension already checks scripts
+with ESLint and understands JSP, so you can turn VS Code's check off:
+
+```jsonc
+"html.validate.scripts": false
+```
+
+Before validation, JSP-only constructs are replaced with filler of the
 same length, so every problem is reported at its exact line and column in your file:
 
 | Construct | Replaced by |

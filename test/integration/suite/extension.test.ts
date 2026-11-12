@@ -134,9 +134,9 @@ describe("Web Standards Validator", () => {
         await config().update("jsp.documentStructure", undefined, vscode.ConfigurationTarget.Global);
       });
 
-      it("opens .jsp files with the jsp language and reports HTML errors at JSP positions", async () => {
+      it("keeps .jsp files in the html language and reports HTML errors at JSP positions", async () => {
         const doc = await vscode.workspace.openTextDocument(jspUri());
-        assert.equal(doc.languageId, "jsp");
+        assert.equal(doc.languageId, "html");
         await vscode.window.showTextDocument(doc);
         const ds = await waitForDiagnostics(doc.uri, (d) => d.some((x) => codeOf(x) === "vnu:img-missing-alt"));
         const pos = (id: string) => ds.filter((d) => codeOf(d) === id).map((d) => `${d.range.start.line + 1}:${d.range.start.character + 1}`);
