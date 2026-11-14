@@ -2,7 +2,7 @@
   "name": "w3c-validator-plus",
   "displayName": "Web Standards Validator for HTML & JSP",
   "description": "Validate HTML5, CSS, JavaScript and JSP locally. HTML and CSS checks are powered by the Nu Html Checker (the engine behind validator.w3.org/nu).",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "FirozKhan",
   "license": "MIT",
   "icon": "images/icon.png",

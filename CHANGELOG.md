@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.2 (2026-11-14)
+
+Fewer settings and commands (15 settings instead of 22, 8 commands instead of 10).
+
+- **Removed rendered mode for JSP**: the `webValidator.jsp.mode`, `webValidator.jsp.renderedBaseUrl`
+  and `webValidator.jsp.webRoot` settings and the **Validate Running Page** and **Show Rendered
+  Page** commands. JSP files are always validated from their source.
+- **Removed `webValidator.vnu.validateOnType`.** With `run: "onType"`, JavaScript and custom rules
+  run while typing and the Nu Html Checker runs on open and save.
+- **`ignoreMessages`, `customRules` and `rulesDirectories` are now only read from
+  `.webvalidator.json`**, not from VS Code settings. Move any values you had in settings into
+  that file.
+
 ## 0.1.1 (2026-11-12)
 
 - **JSP files keep their colours.** 0.1.0 registered `.jsp`, `.jspf` and `.tag` as a separate
