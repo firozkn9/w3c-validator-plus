@@ -3,7 +3,6 @@
 import * as vscode from "vscode";
 import { RULE_ERROR_RULE, type Finding, type Fix, type Severity } from "./core";
 import { disableForFileFix, disableForLineFix } from "./suppressions";
-import { PAGE_SCHEME, RENDERED_PAGE_RULE } from "./validationService";
 
 const SEVERITY: Record<Severity, vscode.DiagnosticSeverity> = {
   error: vscode.DiagnosticSeverity.Error,
@@ -128,22 +127,15 @@ export class WebValidatorCodeActions implements vscode.CodeActionProvider {
     const disabled = new Set<string>();
     const text = doc.getText();
     const uri = doc.uri.toString();
-    const readOnly = doc.uri.scheme === PAGE_SCHEME;
 
     for (const d of context.diagnostics) {
       const f = this.diagnostics.findingFor(doc.uri, d);
       if (!f) continue;
 
-      if (f.ruleId === RENDERED_PAGE_RULE) {
-        const command = { command: "webValidator.showRenderedPage", title: "Show rendered page", arguments: [doc.uri] };
-        actions.push(action("Show rendered page", d, { command }));
-        continue;
-      }
       if (f.ruleId === RULE_ERROR_RULE) {
         actions.push(action("Show the error in the Web Validator output", d, { command: { command: "webValidator.showOutput", title: "Show output" } }));
         continue;
       }
-      if (readOnly) continue;
 
       if (f.fix) {
         const a = action(f.fix.title, d, { edit: toEdit(doc.uri, f.fix) });

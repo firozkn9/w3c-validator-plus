@@ -18,14 +18,10 @@ export interface Settings {
   javaHome: string;
   vnuMode: "local" | "server";
   vnuServerUrl: string;
-  vnuValidateOnType: boolean;
   vnuTimeoutMs: number;
   jsp: {
-    mode: "masked" | "rendered";
     documentStructure: JspDocumentStructure;
     customTagPrefixes: string[];
-    renderedBaseUrl: string;
-    webRoot: string;
   };
   ecmaVersion: "latest" | number;
   configLayer: Record<string, unknown>; // the rule settings, shaped like a .webvalidator.json
@@ -51,12 +47,8 @@ export function readSettings(scope?: vscode.ConfigurationScope): Settings {
   const configLayer: Record<string, unknown> = {};
   const rules = c.get<Record<string, unknown>>("rules", {});
   if (rules && Object.keys(rules).length) configLayer.rules = rules;
-  for (const key of ["ignoreMessages", "exclude", "customRules"]) {
-    const v = c.get<unknown[]>(key, []);
-    if (Array.isArray(v) && v.length) configLayer[key] = v;
-  }
-  const dirs = machineValue<string[]>(c, "rulesDirectories", []);
-  if (Array.isArray(dirs) && dirs.length) configLayer.rulesDirectories = dirs;
+  const exclude = c.get<unknown[]>("exclude", []);
+  if (Array.isArray(exclude) && exclude.length) configLayer.exclude = exclude;
 
   return {
     enable: c.get("enable", true),
@@ -67,14 +59,10 @@ export function readSettings(scope?: vscode.ConfigurationScope): Settings {
     javaHome: machineValue(c, "java.home", ""),
     vnuMode: c.get<"local" | "server">("vnu.mode", "local"),
     vnuServerUrl: machineValue(c, "vnu.serverUrl", ""),
-    vnuValidateOnType: c.get("vnu.validateOnType", false),
     vnuTimeoutMs: Math.max(1000, c.get("vnu.timeoutMs", 20_000)),
     jsp: {
-      mode: c.get<string>("jsp.mode", "masked") === "rendered" ? "rendered" : "masked",
       documentStructure: c.get<string>("jsp.documentStructure", "ignore") === "validate" ? "validate" : "ignore",
       customTagPrefixes: c.get<string[]>("jsp.customTagPrefixes", [...DEFAULT_CUSTOM_TAG_PREFIXES]),
-      renderedBaseUrl: machineValue(c, "jsp.renderedBaseUrl", ""),
-      webRoot: c.get("jsp.webRoot", "src/main/webapp"),
     },
     ecmaVersion: ecmaVersionOf(c.get("javascript.ecmaVersion", "latest")),
     configLayer,

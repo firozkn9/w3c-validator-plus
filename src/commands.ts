@@ -3,7 +3,6 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import { addRulesDirectoryText, applyReplacement, CONFIG_FILE_NAME, isExcluded, setRuleInConfigText, type TextReplacement } from "./config";
 import { Semaphore, type Logger } from "./core";
-import { fetchPage, isLocalUrl } from "./pages";
 import { RULE_ID_PATTERN, RULE_TYPES_DTS, ruleFileName, ruleTemplate } from "./ruleLoader";
 import type { RuleLanguage } from "./rules";
 import { readSettings, type ConfigLoader } from "./settings";
@@ -212,47 +211,4 @@ export async function validateWorkspace(service: ValidationService, loader: Conf
       return summary;
     },
   );
-}
-
-export async function validateRunningPage(service: ValidationService, url?: string, options: { open?: boolean } = {}): Promise<vscode.Uri | undefined> {
-  const settings = readSettings();
-  const target =
-    url ??
-    (await vscode.window.showInputBox({
-      title: "Validate Running Page",
-      prompt: "URL of a page served by your local application",
-      value: settings.jsp.renderedBaseUrl || "http://localhost:8080/",
-      validateInput: (v) => {
-        try {
-          const u = new URL(v);
-          return u.protocol === "http:" || u.protocol === "https:" ? undefined : "Use an http or https URL";
-        } catch {
-          return "Enter a valid URL";
-        }
-      },
-    }));
-  if (!target) return undefined;
-  if (!isLocalUrl(new URL(target))) {
-    const go = await vscode.window.showWarningMessage(
-      `${new URL(target).host} is not a local address. The extension will request this page from your computer. Continue?`,
-      { modal: true },
-      "Validate",
-    );
-    if (go !== "Validate") return undefined;
-  }
-  try {
-    const page = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: `Web Validator: loading ${target}` },
-      () => fetchPage(target),
-    );
-    if (page.status >= 400) {
-      void vscode.window.showWarningMessage(`Web Validator: ${target} answered HTTP ${page.status}; validating the response anyway.`);
-    }
-    const { uri } = await service.validatePage(page.url, page.body);
-    if (options.open !== false) await vscode.window.showTextDocument(uri, { preview: true });
-    return uri;
-  } catch (err) {
-    void vscode.window.showErrorMessage(`Web Validator: could not load ${target}: ${(err as Error).message}`);
-    return undefined;
-  }
 }

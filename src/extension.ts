@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { createCustomRule, disableRuleInConfig, openConfig, validateRunningPage, validateWorkspace, type CreateRuleArgs } from "./commands";
+import { createCustomRule, disableRuleInConfig, openConfig, validateWorkspace, type CreateRuleArgs } from "./commands";
 import { describeError, type Engine, type EngineStatus, type Logger, type TraceLevel } from "./core";
 import { DiagnosticsManager, WebValidatorCodeActions } from "./diagnostics";
 import { EslintEngine } from "./eslint";
@@ -8,7 +8,7 @@ import { locateJava, MIN_JAVA_MAJOR, nodeJavaHost } from "./java";
 import { RuleStore } from "./ruleLoader";
 import { RulesEngine } from "./rules";
 import { ConfigLoader, readSettings, redhatJavaHomes, SECTION, type Settings } from "./settings";
-import { PAGE_SCHEME, PageStore, ValidationService } from "./validationService";
+import { ValidationService } from "./validationService";
 import { VnuEngine, type VnuEngineOptions } from "./vnu";
 
 let vnuEngine: VnuEngine | undefined;
@@ -54,19 +54,16 @@ export function activate(context: vscode.ExtensionContext): WebValidatorApi {
 
   const diagnostics = new DiagnosticsManager();
   const configLoader = new ConfigLoader(logger);
-  const pages = new PageStore();
   const service = new ValidationService({
     engines,
     diagnostics,
     logger,
     configLoader,
-    pages,
-    runsOnType: (engine, s) => engine.id !== "vnu" || s.vnuValidateOnType,
     onEngineUnavailable: (engine) => {
       if (engine.id === "vnu" && engine.status.detail?.startsWith("Java")) void showJavaMissing(() => logger.show());
     },
   });
-  const statusBar = new StatusBar(engines, diagnostics, (doc) => service.isRelevant(doc) || doc.uri.scheme === PAGE_SCHEME);
+  const statusBar = new StatusBar(engines, diagnostics, (doc) => service.isRelevant(doc));
 
   const reloadRules = () => {
     store.invalidate();
@@ -91,14 +88,13 @@ export function activate(context: vscode.ExtensionContext): WebValidatorApi {
   };
   const ruleWatcher = vscode.workspace.createFileSystemWatcher("**/*.{js,cjs,mjs,json}");
 
-  const selector: vscode.DocumentSelector = [{ language: "html" }, { language: "jsp" }, { language: "javascript" }, { scheme: PAGE_SCHEME }];
+  const selector: vscode.DocumentSelector = [{ language: "html" }, { language: "jsp" }, { language: "javascript" }];
   const command = (id: string, fn: (...args: never[]) => unknown) => vscode.commands.registerCommand(`webValidator.${id}`, fn);
 
   context.subscriptions.push(
     logger,
     diagnostics,
     configLoader,
-    pages,
     service,
     statusBar,
     { dispose: () => void vnu.dispose() },
@@ -108,7 +104,6 @@ export function activate(context: vscode.ExtensionContext): WebValidatorApi {
     ruleWatcher.onDidChange(onRuleFileChange),
     ruleWatcher.onDidCreate(onRuleFileChange),
     ruleWatcher.onDidDelete(onRuleFileChange),
-    vscode.workspace.registerTextDocumentContentProvider(PAGE_SCHEME, pages),
     vscode.languages.registerCodeActionsProvider(selector, new WebValidatorCodeActions(diagnostics), WebValidatorCodeActions.metadata),
 
     command("validateFile", async () => {
@@ -125,16 +120,6 @@ export function activate(context: vscode.ExtensionContext): WebValidatorApi {
     }),
     command("validateWorkspace", () => validateWorkspace(service, configLoader, logger)),
     command("clearProblems", () => service.clearWorkspaceResults()),
-    command("validateRunningPage", (url?: string, options?: { open?: boolean }) => validateRunningPage(service, url, options)),
-    command("showRenderedPage", async (jspUri?: vscode.Uri) => {
-      const uri = jspUri ?? vscode.window.activeTextEditor?.document.uri;
-      const page = uri && service.renderedPageFor(uri);
-      if (!page) {
-        void vscode.window.showInformationMessage('Web Validator: no rendered page yet. Set webValidator.jsp.mode to "rendered" and save the JSP.');
-        return;
-      }
-      await vscode.window.showTextDocument(page, { preview: true });
-    }),
     command("createCustomRule", (args?: CreateRuleArgs) => createCustomRule(configLoader, args)),
     command("disableRuleInConfig", async (uri: vscode.Uri | undefined, ruleId: string) => {
       const file = await disableRuleInConfig(configLoader, uri, ruleId);

@@ -38,12 +38,12 @@ The release workflow signs in to Microsoft Entra ID with GitHub's OIDC token and
 
 1. Update `version` in `package.json` (semver; it must be higher than the published one).
 2. In `CHANGELOG.md`, rename the top section to `## <version> (YYYY-MM-DD)`.
-3. `npm run release:check && npm test`
+3. `npm run release:check && npm run lint && npm run typecheck`
 4. Optional: `npx vsce package --no-dependencies` and install the `.vsix` in a clean profile:
    `code --user-data-dir /tmp/vsc --extensions-dir /tmp/vsc-ext --install-extension <file>.vsix`
 5. Commit, then tag and push: `git tag v<version> && git push origin main v<version>`.
 
-The **Release** workflow tests, packages once, publishes the same `.vsix` to the Marketplace
+The **Release** workflow checks, packages once, publishes the same `.vsix` to the Marketplace
 and Open VSX, and attaches it to a GitHub release. Marketplace verification usually takes a
 few minutes.
 

@@ -6,16 +6,11 @@ import { applyRuleConfig, isExcluded } from "./config";
 import { EngineUnavailableError, isAbortError, type Engine, type Finding, type Logger, type SourceDocument, type ValidationContext } from "./core";
 import type { DiagnosticsManager } from "./diagnostics";
 import { isJspDocument, prepareJsp } from "./jsp";
-import { fetchPage, renderedUrlFor } from "./pages";
 import { readSettings, type ConfigForUri, type ConfigLoader, type Settings } from "./settings";
 import { applySuppressions } from "./suppressions";
 import { addHtmlFixes } from "./vnuMessages";
 
 export type Trigger = "open" | "save" | "type" | "manual" | "workspace";
-
-export const PAGE_SCHEME = "webvalidator-page";
-export const RENDERED_PAGE_RULE = "webvalidator/rendered-page";
-const RENDERED_ENGINE = "rendered";
 
 // Other schemes (git, output, diff views, ...) are never validated automatically.
 const SCHEMES = new Set(["file", "untitled", "vscode-remote", "vscode-vfs"]);
@@ -53,8 +48,6 @@ export interface ValidationServiceOptions {
   diagnostics: DiagnosticsManager;
   logger: Logger;
   configLoader: ConfigLoader;
-  pages: PageStore;
-  runsOnType(engine: Engine, settings: Settings): boolean;
   onEngineUnavailable(engine: Engine, err: EngineUnavailableError): void;
 }
 
@@ -74,7 +67,6 @@ export class ValidationService implements vscode.Disposable {
   private readonly running = new Map<string, AbortController>();
   private readonly timers = new Map<string, NodeJS.Timeout>();
   private readonly fromDisk = new Set<string>(); // from Validate Workspace; kept after the editor closes
-  private readonly renderedPages = new Map<string, vscode.Uri>(); // JSP -> its rendered page
   private readonly disposables: vscode.Disposable[] = [];
 
   constructor(private readonly opts: ValidationServiceOptions) {}
@@ -161,12 +153,11 @@ export class ValidationService implements vscode.Disposable {
     const settings = readSettings(uri);
     const key = uri.toString();
     const { logger, diagnostics } = this.opts;
-    const internal = uri.scheme === PAGE_SCHEME;
 
     if (!settings.enable) return { ran: [], skipped: "Validation is disabled (webValidator.enable)." };
-    if (!internal && !SCHEMES.has(uri.scheme)) return { ran: [], skipped: `Documents with the '${uri.scheme}' scheme are not validated.` };
+    if (!SCHEMES.has(uri.scheme)) return { ran: [], skipped: `Documents with the '${uri.scheme}' scheme are not validated.` };
     const language = settingsLanguage(target.languageId, key);
-    if (!internal && !settings.languages.includes(language)) return { ran: [], skipped: `Language '${language}' is not in webValidator.languages.` };
+    if (!settings.languages.includes(language)) return { ran: [], skipped: `Language '${language}' is not in webValidator.languages.` };
     const sizeKb = Buffer.byteLength(target.text, "utf8") / 1024;
     if (sizeKb > settings.maxFileSizeKb) {
       diagnostics.clear(uri);
@@ -187,22 +178,18 @@ export class ValidationService implements vscode.Disposable {
     outerSignal?.addEventListener("abort", () => controller.abort(), { once: true });
     this.running.set(key, controller);
     try {
-      if (isJspDocument(target.languageId, key) && settings.jsp.mode === "rendered" && uri.scheme === "file") {
-        if (trigger === "type") return { ran: [] };
-        return await this.validateRenderedJsp(target, settings, ctx, controller.signal);
-      }
-      diagnostics.clearEngine(uri, RENDERED_ENGINE);
-      return await this.runEngines(target, ctx, trigger, controller.signal, settings);
+      return await this.runEngines(target, ctx, trigger, controller.signal);
     } finally {
       if (this.running.get(key) === controller) this.running.delete(key);
     }
   }
 
-  private async runEngines(target: ValidationTarget, ctx: ValidationContext, trigger: Trigger, signal: AbortSignal, settings: Settings): Promise<ValidationOutcome> {
+  private async runEngines(target: ValidationTarget, ctx: ValidationContext, trigger: Trigger, signal: AbortSignal): Promise<ValidationOutcome> {
     const { uri, text } = target;
     const key = uri.toString();
     const { logger, diagnostics } = this.opts;
-    const engines = this.opts.engines.filter((e) => e.supports(target.languageId) && (trigger !== "type" || this.opts.runsOnType(e, settings)));
+    // The Nu Html Checker is too slow to run on every keystroke; it waits for a save.
+    const engines = this.opts.engines.filter((e) => e.supports(target.languageId) && (trigger !== "type" || e.id !== "vnu"));
     if (engines.length === 0) return { ran: [], skipped: `No engine handles '${target.languageId}'.` };
 
     const snapshot: SourceDocument = { uri: key, languageId: target.languageId, text, version: target.version };
@@ -241,60 +228,6 @@ export class ValidationService implements vscode.Disposable {
     return { ran: engines.map((e) => e.id), counts: countFindings(all) };
   }
 
-  // Validates fetched HTML as a read-only virtual document.
-  async validatePage(pageUrl: string, html: string, signal?: AbortSignal): Promise<{ uri: vscode.Uri; outcome: ValidationOutcome }> {
-    const uri = PageStore.uriFor(pageUrl);
-    this.opts.pages.set(uri, html);
-    const outcome = await this.validateTarget({ uri, languageId: "html", text: html, version: Date.now() }, "manual", signal);
-    return { uri, outcome };
-  }
-
-  // jsp.mode "rendered": check the page the running app serves for this JSP,
-  // and leave a one-line summary on the JSP itself.
-  private async validateRenderedJsp(target: ValidationTarget, settings: Settings, ctx: ValidationContext, signal: AbortSignal): Promise<ValidationOutcome> {
-    const { uri } = target;
-    const { diagnostics } = this.opts;
-    for (const e of this.opts.engines) diagnostics.clearEngine(uri, e.id);
-    const summary = (message: string, severity: Finding["severity"] = "info") =>
-      diagnostics.set(uri, RENDERED_ENGINE, [
-        { ruleId: RENDERED_PAGE_RULE, source: "Web Validator", severity, message, range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } } },
-      ]);
-
-    if (!ctx.workspaceRoot) {
-      summary("Rendered mode needs the JSP to be inside a workspace folder.");
-      return { ran: [] };
-    }
-    const mapped = renderedUrlFor(uri.fsPath, path.join(ctx.workspaceRoot, settings.jsp.webRoot), settings.jsp.renderedBaseUrl);
-    if ("error" in mapped) {
-      summary(`Rendered mode: ${mapped.error}`);
-      return { ran: [], skipped: mapped.error };
-    }
-    let page;
-    try {
-      page = await fetchPage(mapped.url, { signal });
-    } catch (err) {
-      if (isAbortError(err)) return { ran: [] };
-      summary(`Rendered mode: could not load ${mapped.url}: ${(err as Error).message}. Is the application running?`, "warning");
-      return { ran: [] };
-    }
-    if (page.status >= 400) {
-      summary(`Rendered mode: ${mapped.url} answered HTTP ${page.status}.`, "warning");
-      return { ran: [] };
-    }
-    const { uri: pageUri, outcome } = await this.validatePage(page.url, page.body, signal);
-    this.renderedPages.set(uri.toString(), pageUri);
-    const c = outcome.counts ?? { errors: 0, warnings: 0, infos: 0 };
-    summary(
-      `Rendered page ${page.url}: ${c.errors} error(s), ${c.warnings} warning(s), ${c.infos} info(s). Use the quick fix "Show rendered page" to see them.`,
-      c.errors ? "warning" : "info",
-    );
-    return outcome;
-  }
-
-  renderedPageFor(jspUri: vscode.Uri): vscode.Uri | undefined {
-    return this.renderedPages.get(jspUri.toString());
-  }
-
   private onClose(doc: vscode.TextDocument): void {
     const key = doc.uri.toString();
     this.running.get(key)?.abort();
@@ -306,7 +239,7 @@ export class ValidationService implements vscode.Disposable {
       void this.validateFile(doc.uri, "workspace");
       return;
     }
-    if (doc.uri.scheme !== PAGE_SCHEME) this.opts.diagnostics.clear(doc.uri);
+    this.opts.diagnostics.clear(doc.uri);
   }
 
   clearWorkspaceResults(): void {
@@ -323,29 +256,3 @@ export class ValidationService implements vscode.Disposable {
   }
 }
 
-// Fetched pages, shown as read-only documents.
-export class PageStore implements vscode.TextDocumentContentProvider, vscode.Disposable {
-  private readonly pages = new Map<string, string>();
-  private readonly changed = new vscode.EventEmitter<vscode.Uri>();
-  readonly onDidChange = this.changed.event;
-
-  // e.g. webvalidator-page:/localhost:8080/app/page.jsp.html?url=...
-  static uriFor(pageUrl: string): vscode.Uri {
-    const u = new URL(pageUrl);
-    const name = `${u.host}${u.pathname}`.replace(/[^\w./-]+/g, "_");
-    return vscode.Uri.from({ scheme: PAGE_SCHEME, path: `/${name}${name.endsWith(".html") ? "" : ".html"}`, query: `url=${encodeURIComponent(pageUrl)}` });
-  }
-
-  set(uri: vscode.Uri, text: string): void {
-    this.pages.set(uri.toString(), text);
-    this.changed.fire(uri);
-  }
-
-  provideTextDocumentContent(uri: vscode.Uri): string {
-    return this.pages.get(uri.toString()) ?? "<!-- This page is no longer available. Validate it again. -->";
-  }
-
-  dispose(): void {
-    this.changed.dispose();
-  }
-}

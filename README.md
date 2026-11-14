@@ -23,8 +23,7 @@ This extension is not affiliated with or endorsed by W3C.
   single lines with comments, and add your own rules, in JSON or in JavaScript.
 - **Quick fixes**: add `alt=""`, add `lang`, add a doctype, ESLint suggestions, and
   "Disable rule for this line / this file / in .webvalidator.json".
-- **Validate Workspace**, **Validate Running Page** and a **rendered mode** for JSP that
-  validates the page your running application serves.
+- **Validate Workspace** checks every supported file at once.
 - **Private by default**: nothing is sent over the network.
 
 ## Requirements
@@ -157,25 +156,17 @@ Many JSPs are not complete pages: SPA partials loaded into an existing `<div>`,
 Custom tag prefixes come from `<%@ taglib prefix="…" %>` directives, `jsp:`, and
 `webValidator.jsp.customTagPrefixes`.
 
-### Rendered mode (`webValidator.jsp.mode`)
-
-With `"rendered"`, saving a JSP fetches the page your running application serves for it
-(`webValidator.jsp.renderedBaseUrl` + the file's path below `webValidator.jsp.webRoot`) and
-validates the real HTML output. The JSP shows one summary problem; its quick fix
-**Show rendered page** opens the fetched page with all problems. Files under `WEB-INF`
-can't be fetched directly; validate a page that includes them instead.
-
 ### Known limitations
 
-- **Conditional branches are all validated together** (masked mode). `<c:choose>`, `<c:if>`
+- **Conditional branches are all validated together**. `<c:choose>`, `<c:if>`
   and `<% if %>` bodies are validated as if every branch were output, so markup that is
-  valid only on one branch can be reported. Rendered mode shows what one request produced.
-- **Includes are not resolved** (masked mode). Each file is validated on its own. An element
+  valid only on one branch can be reported.
+- **Includes are not resolved**. Each file is validated on its own. An element
   opened in one file and closed in another (e.g. `<div class="wrapper">` in a header,
   `</div>` in the footer) is reported as unclosed in the first file and stray in the second.
 - **EL inside `<style>`** is replaced with spaces; CSS errors on a line that contains EL are
   not reported.
-- **HTML produced by EL or custom tags** (e.g. `${rowsHtml}`) is only visible in rendered mode.
+- **HTML produced by EL or custom tags** (e.g. `${rowsHtml}`) is not validated.
 
 ## JavaScript checks
 
@@ -215,7 +206,7 @@ bound page-wide (`$(document).on("click", ".name", …)`).
 
 ### Without code: JSON rules
 
-Add `customRules` to `.webvalidator.json` (or the `webValidator.customRules` setting):
+Add `customRules` to `.webvalidator.json`:
 
 ```json
 {
@@ -287,46 +278,38 @@ Rule files and rule packs are JavaScript that runs inside VS Code, so they are o
 [trusted workspaces](https://code.visualstudio.com/docs/editor/workspace-trust). In untrusted
 workspaces the built-in checks and selector-based JSON rules still run.
 
-## Validate the workspace and running pages
+## Validate the workspace
 
 - **Web Validator: Validate Workspace** checks every supported file (respecting
   `files.exclude`, `exclude` and `node_modules`), with progress and cancellation. Results stay
   in the Problems panel; **Clear Workspace Problems** removes them.
-- **Web Validator: Validate Running Page…** fetches a URL from your local application and
-  validates the returned HTML in a read-only document. Non-local addresses need confirmation.
 
 ## Settings
 
 | Setting | Default | Description |
 |---|---|---|
 | `webValidator.enable` | `true` | Turn validation on or off. |
-| `webValidator.run` | `onSave` | `onSave`, `onType` (debounced) or `manual`. |
+| `webValidator.run` | `onSave` | `onSave`, `onType` (debounced; the HTML checker still waits for a save) or `manual`. |
 | `webValidator.onTypeDelayMs` | `800` | Debounce delay for `onType`. |
 | `webValidator.languages` | `html`, `jsp`, `javascript` | Language ids to validate. |
 | `webValidator.maxFileSizeKb` | `1024` | Larger files are skipped. |
 | `webValidator.rules` | `{}` | Rule severities by id (see Configuration). |
-| `webValidator.ignoreMessages` | `[]` | Regular expressions of messages to hide. |
 | `webValidator.exclude` | `[]` | Glob patterns of files not to validate. |
-| `webValidator.customRules` | `[]` | JSON rules (see Custom rules). |
-| `webValidator.rulesDirectories` | `[]` | Folders with custom rule files (trusted workspaces). |
 | `webValidator.java.home` | | Java 17+ home folder or `java` executable. |
 | `webValidator.vnu.mode` | `local` | `local` (bundled checker) or `server` (your own checker server). |
 | `webValidator.vnu.serverUrl` | | Self-hosted Nu Html Checker URL, used in `server` mode. |
-| `webValidator.vnu.validateOnType` | `false` | Also run the HTML checker while typing. |
 | `webValidator.vnu.timeoutMs` | `20000` | Timeout for one HTML check. |
 | `webValidator.jsp.documentStructure` | `ignore` | `ignore` or `validate` `<!DOCTYPE>`/`<html>`/`<head>`/`<body>` in JSP. |
 | `webValidator.jsp.customTagPrefixes` | `c`, `fmt`, `fn`, … | Extra custom tag prefixes (taglib prefixes are detected automatically). |
-| `webValidator.jsp.mode` | `masked` | `masked` (source file) or `rendered` (running application). |
-| `webValidator.jsp.renderedBaseUrl` | | Base URL of the running application, e.g. `http://localhost:8080/app`. |
-| `webValidator.jsp.webRoot` | `src/main/webapp` | Folder that maps to the base URL. |
 | `webValidator.javascript.ecmaVersion` | `latest` | ECMAScript version used to parse JavaScript. |
 | `webValidator.trace` | `info` | Log level of the **Web Validator** output channel. |
+
+`ignoreMessages`, `customRules` and `rulesDirectories` are set in `.webvalidator.json`.
 
 ## Commands
 
 - **Web Validator: Validate Current File**
 - **Web Validator: Validate Workspace** / **Clear Workspace Problems**
-- **Web Validator: Validate Running Page…** / **Show Rendered Page**
 - **Web Validator: Open Configuration File**
 - **Web Validator: Create Custom Rule**
 - **Web Validator: Restart Validation Engines** (after installing Java or changing its path)
@@ -337,13 +320,11 @@ workspaces the built-in checks and selector-based JSON rules still run.
 All validation runs locally. The HTML checker runs as a process on your computer that
 only accepts connections from `127.0.0.1`; your code is never sent anywhere. Network requests
 happen only when you ask for them: `webValidator.vnu.mode: "server"` sends documents to the
-server you configure, and **Validate Running Page** / rendered mode request pages from the
-URL you give (by default your local application). The extension collects no telemetry.
+server you configure. The extension collects no telemetry.
 
 In [untrusted workspaces](https://code.visualstudio.com/docs/editor/workspace-trust),
 custom rule code and pattern rules are not run, and workspace values for
-`webValidator.java.home`, `webValidator.vnu.serverUrl`, `webValidator.rulesDirectories` and
-`webValidator.jsp.renderedBaseUrl` are ignored.
+`webValidator.java.home` and `webValidator.vnu.serverUrl` are ignored.
 
 ## License
 

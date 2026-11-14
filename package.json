@@ -45,12 +45,10 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "In untrusted workspaces custom rule code and regular-expression rules are not run, and workspace values for the Java path, validator server URL, rules directories and rendered-page URL are ignored. The built-in checks and selector rules still run.",
+      "description": "In untrusted workspaces custom rule code and regular-expression rules are not run, and workspace values for the Java path and validator server URL are ignored. The built-in checks and selector rules still run.",
       "restrictedConfigurations": [
         "webValidator.java.home",
-        "webValidator.vnu.serverUrl",
-        "webValidator.rulesDirectories",
-        "webValidator.jsp.renderedBaseUrl"
+        "webValidator.vnu.serverUrl"
       ]
     },
     "virtualWorkspaces": {
@@ -110,16 +108,6 @@
         "category": "Web Validator"
       },
       {
-        "command": "webValidator.validateRunningPage",
-        "title": "Validate Running Page…",
-        "category": "Web Validator"
-      },
-      {
-        "command": "webValidator.showRenderedPage",
-        "title": "Show Rendered Page",
-        "category": "Web Validator"
-      },
-      {
         "command": "webValidator.createCustomRule",
         "title": "Create Custom Rule",
         "category": "Web Validator"
@@ -162,7 +150,7 @@
           ],
           "enumDescriptions": [
             "Validate when a file is opened or saved.",
-            "Validate while typing (debounced). The HTML engine still only runs on save unless `webValidator.vnu.validateOnType` is enabled.",
+            "Validate while typing (debounced). The Nu Html Checker still runs only on open and save.",
             "Validate only when a command is run."
           ],
           "default": "onSave",
@@ -212,14 +200,6 @@
           },
           "markdownDescription": "Rule severities by id, e.g. `{ \"vnu:missing-lang\": \"off\", \"eslint:no-unused-vars\": \"warning\", \"webvalidator/jquery-unscoped-selector\": \"error\" }`. Wildcards work (`\"vnu:css-*\": \"off\"`). A `.webvalidator.json` file takes precedence over this setting."
         },
-        "webValidator.ignoreMessages": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "markdownDescription": "Regular expressions; matching messages from any engine are hidden."
-        },
         "webValidator.exclude": {
           "type": "array",
           "items": {
@@ -227,23 +207,6 @@
           },
           "default": [],
           "markdownDescription": "Glob patterns (relative to the workspace folder) of files not to validate, e.g. `**/generated/**`."
-        },
-        "webValidator.customRules": {
-          "type": "array",
-          "default": [],
-          "markdownDescription": "Rules without code: `{ \"id\": \"custom/x\", \"message\": \"…\", \"selector\": \"img:not([alt])\" }` or with a `pattern` (regular expression). See the README.",
-          "items": {
-            "type": "object"
-          }
-        },
-        "webValidator.rulesDirectories": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "scope": "machine-overridable",
-          "markdownDescription": "Folders with custom rule files, relative to the workspace folder. Only loaded in trusted workspaces."
         },
         "webValidator.java.home": {
           "type": "string",
@@ -269,11 +232,6 @@
           "default": "",
           "scope": "machine-overridable",
           "markdownDescription": "URL of a self-hosted Nu Html Checker server, e.g. `http://localhost:8888/`. Used only when `webValidator.vnu.mode` is `server`. Document contents are sent to this URL."
-        },
-        "webValidator.vnu.validateOnType": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Also run the Nu Html Checker while typing when `webValidator.run` is `onType`."
         },
         "webValidator.vnu.timeoutMs": {
           "type": "number",
@@ -314,30 +272,6 @@
           ],
           "markdownDescription": "Tag prefixes treated as JSP custom tags (their markup is skipped, their body is validated). `jsp:` and prefixes declared with `<%@ taglib prefix=\"…\" %>` are always included."
         },
-        "webValidator.jsp.mode": {
-          "type": "string",
-          "enum": [
-            "masked",
-            "rendered"
-          ],
-          "enumDescriptions": [
-            "Validate the HTML in the JSP source file (JSP constructs are masked).",
-            "Validate the page your running application serves for the JSP (see webValidator.jsp.renderedBaseUrl)."
-          ],
-          "default": "masked",
-          "markdownDescription": "How JSP files are validated. In `rendered` mode the JSP itself shows one summary problem; open the rendered page with its quick fix."
-        },
-        "webValidator.jsp.renderedBaseUrl": {
-          "type": "string",
-          "default": "",
-          "scope": "machine-overridable",
-          "markdownDescription": "Base URL of the running application for `rendered` mode and **Validate Running Page**, e.g. `http://localhost:8080/myapp`."
-        },
-        "webValidator.jsp.webRoot": {
-          "type": "string",
-          "default": "src/main/webapp",
-          "markdownDescription": "Folder (relative to the workspace folder) that maps to `webValidator.jsp.renderedBaseUrl`."
-        },
         "webValidator.javascript.ecmaVersion": {
           "type": [
             "string",
@@ -363,10 +297,6 @@
         {
           "command": "webValidator.disableRuleInConfig",
           "when": "false"
-        },
-        {
-          "command": "webValidator.showRenderedPage",
-          "when": "editorLangId == jsp"
         }
       ]
     },
@@ -383,14 +313,11 @@
     "watch": "node scripts/build.ts --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run --passWithNoTests",
-    "test:integration": "npm run build && tsc -p test/integration && node out/test/integration/runTest.js",
     "vscode:prepublish": "npm run build:prod",
     "package": "vsce package --no-dependencies",
     "release:check": "node scripts/check-release.ts",
-    "icon": "node scripts/icon.ts",
-    "schema": "vitest run test/unit/schema.test.ts"
+    "icon": "node scripts/icon.ts"
   },
   "dependencies": {
     "eslint": "^10.14.0",

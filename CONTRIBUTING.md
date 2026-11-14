@@ -2,21 +2,19 @@
 
 ## Setup
 
-Requirements: Node.js 22.18+ (it runs the TypeScript build scripts directly), and Java 17+ for the HTML checker tests.
+Requirements: Node.js 22.18+ (it runs the TypeScript build scripts directly), and Java 17+ for the HTML checker.
 
 ```sh
 npm install
 npm run build              # bundle to dist/ and copy vnu.jar
-npm run test:unit          # vitest (real-engine tests skip when Java 17+ is missing)
-npm run test:integration   # VS Code + mocha against test/fixtures/workspace
 npm run lint && npm run typecheck
 ```
 
-Press F5 ("Run Extension") to open `test/fixtures/workspace` in a development host.
+Press F5 ("Run Extension") to start a development host, then open any folder with HTML or JSP files.
 
 ## Project layout
 
-Everything in `src/` is flat. The modules that don't import `vscode` can be unit-tested with plain Node:
+Everything in `src/` is flat. The modules that don't import `vscode` run in plain Node:
 
 - `core.ts` – shared types (`Finding`, `Engine`) and small helpers
 - `config.ts` – `.webvalidator.json` model, JSONC parsing and comment-preserving edits
@@ -25,7 +23,7 @@ Everything in `src/` is flat. The modules that don't import `vscode` can be unit
 - `eslint.ts` – JavaScript engine and the `jquery-unscoped-selector` rule
 - `rules.ts`, `ruleLoader.ts`, `selector.ts` – custom rule API, runner and loader
 - `suppressions.ts` – `webvalidator-disable` comments
-- `java.ts`, `pages.ts` – Java detection, fetching pages from a running app
+- `java.ts` – finding a Java 17+ installation
 
 VS Code glue: `extension.ts`, `validationService.ts`, `settings.ts`, `diagnostics.ts`, `commands.ts`.
 
